@@ -170,56 +170,40 @@
   {% block head %}{% endblock %}
 </head>
 <body>
-  <header>
-    <div class="header-top">
-      <h1>MONITOR · Renta Fija AR</h1>
-      {# Indicador de frescura (O1): poll a /health/badge cada 15s → verde/ámbar/rojo
-         según el estado del refresh loop. Presente en todas las páginas. #}
-      <span class="meta-wrap" hx-get="/health/badge"
-            hx-trigger="load, every 15s[mrRefreshOK(this)], tabvisible[mrRefreshOK(this)] from:body"
-            hx-swap="innerHTML">
-        <span class="meta"><span class="live"></span>{% if last_refresh %}act {{ last_refresh.strftime("%H:%M:%S") }}{% else %}en vivo{% endif %}</span>
-      </span>
-      <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 10px; white-space: nowrap; border-left: 1px solid var(--border-color); padding-left: 10px;">
-        Datos: OpenBymada & Data912 (Delay 20m)
-      </span>
-      <nav>
-        {% if has_tab("bonos") %}<a href="{{ url_for('index') }}">Bonos</a>{% endif %}
-
-        {% if has_tab("curva") %}<a href="/curva">Curva</a>{% endif %}
-        {% if has_tab("cartera") %}<a href="/cartera">Cartera</a>{% endif %}
-        {% if has_tab("bcra") %}<a href="/bcra">BCRA</a>{% endif %}
-        {% if has_tab("cashflows") %}<a href="/cashflows">Cashflows</a>{% endif %}
-        {% if has_tab("fci") %}<a href="/fci">FCI</a>{% endif %}
-        {% if has_tab("escenarios") %}<a href="/escenarios">Escenarios</a>{% endif %}
-        {% if has_tab("opciones") %}<a href="/options">Opciones</a>{% endif %}
-        {% if has_tab("catalogo") %}<a href="/catalogo">Catálogo</a>{% endif %}
-        {% if has_tab("abm") %}<a href="/abm">ABM Bonos</a>{% endif %}
-        {% if current_user and current_user.is_admin %}<a href="/users" style="color: #60a5fa; font-weight: bold;">Manager</a>{% endif %}
-        {# CONFIG de paneles: elegir qué cuadros ver / restaurar los cerrados con X.
-           El menú lo arma el JS del dashboard (index.html); en otras páginas el
-           link lleva al dashboard. #}
-        <span class="nav-cfg-wrap" id="panel-config-wrap">
-          <a href="{{ url_for('index') }}" id="nav-config-btn">CONFIG</a>
-          <div class="panel-config-menu" id="panel-config-menu"></div>
-        </span>
-
-        <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">◑</button>
-        {# Logout por POST (no GET, anti-CSRF). Solo si hay sesión. #}
-        {% if current_user %}
-        <form method="post" action="/logout" style="display:inline">
-          <button type="submit" class="theme-btn" title="Cerrar sesión ({{ current_user.username }})">⎋</button>
-        </form>
-        {% endif %}
-      </nav>
-    </div>
-    {# Strip de cotizaciones (dólares + reservas + riesgo país). Autocargable por
-       HTMX → presente en todas las páginas sin tocar cada router. #}
-    <div class="header-strip" hx-get="/header/cards"
+  <header style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; padding: 0; background: var(--head-bg); border-bottom: 1px solid var(--panel-border);">
+    {# Strip de cotizaciones (dólares + reservas + riesgo país). Autocargable por HTMX #}
+    <div class="header-strip" style="flex-grow: 1; border-top: none; padding-top: 6px; padding-bottom: 6px; border-right: none;" 
+         hx-get="/header/cards"
          hx-trigger="load, every 60s[mrRefreshOK(this)], tabvisible[mrRefreshOK(this)] from:body"
          hx-swap="innerHTML">
       <span class="hstrip-loading">Cargando cotizaciones…</span>
     </div>
+
+    <nav style="display: flex; align-items: center; gap: 8px; padding-right: 18px; padding-left: 10px; background: var(--head-bg); flex-shrink: 0; border-left: 1px solid var(--panel-border);">
+      {% if has_tab("bonos") %}<a href="{{ url_for('index') }}">Bonos</a>{% endif %}
+      {% if has_tab("curva") %}<a href="/curva">Curva</a>{% endif %}
+      {% if has_tab("cartera") %}<a href="/cartera">Cartera</a>{% endif %}
+      {% if has_tab("bcra") %}<a href="/bcra">BCRA</a>{% endif %}
+      {% if has_tab("cashflows") %}<a href="/cashflows">Cashflows</a>{% endif %}
+      {% if has_tab("fci") %}<a href="/fci">FCI</a>{% endif %}
+      {% if has_tab("escenarios") %}<a href="/escenarios">Escenarios</a>{% endif %}
+      {% if has_tab("opciones") %}<a href="/options">Opciones</a>{% endif %}
+      {% if has_tab("catalogo") %}<a href="/catalogo">Catálogo</a>{% endif %}
+      {% if has_tab("abm") %}<a href="/abm">ABM Bonos</a>{% endif %}
+      {% if current_user and current_user.is_admin %}<a href="/users" style="color: #60a5fa; font-weight: bold;">Manager</a>{% endif %}
+      
+      <span class="nav-cfg-wrap" id="panel-config-wrap">
+        <a href="{{ url_for('index') }}" id="nav-config-btn">CONFIG</a>
+        <div class="panel-config-menu" id="panel-config-menu"></div>
+      </span>
+
+      {# Logout por POST #}
+      {% if current_user %}
+      <form method="post" action="/logout" style="display:inline; margin-left: 6px;">
+        <button type="submit" class="theme-btn" title="Cerrar sesión ({{ current_user.username }})">⎋</button>
+      </form>
+      {% endif %}
+    </nav>
   </header>
   {% block content %}{% endblock %}
   <div id="modal"></div>
