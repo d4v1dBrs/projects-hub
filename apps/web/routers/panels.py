@@ -119,7 +119,7 @@ def _ci_metrics(panel_id: str, request: Request, hist_provider,
 
 # ── FastAPI route handlers ───────────────────────────────────────────────────
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/bonos", response_class=HTMLResponse)
 def index(request: Request, state=Depends(get_state)):
     panels = [{"id": pid, "title": PANELS[pid][0], "columns": panel_columns(pid),
                "ccy_filter": pid in CCY_FILTER_PANELS,

@@ -181,7 +181,7 @@
         <span class="meta"><span class="live"></span>{% if last_refresh %}act {{ last_refresh.strftime("%H:%M:%S") }}{% else %}en vivo{% endif %}</span>
       </span>
       <nav>
-        {% if has_tab("bonos") %}<a href="/">Bonos</a>{% endif %}
+        {% if has_tab("bonos") %}<a href="{{ url_for('index') }}">Bonos</a>{% endif %}
         {% if has_tab("on") %}<a href="/on">O.N's</a>{% endif %}
         {% if has_tab("curva") %}<a href="/curva">Curva</a>{% endif %}
         {% if has_tab("cartera") %}<a href="/cartera">Cartera</a>{% endif %}
@@ -197,14 +197,10 @@
            El menú lo arma el JS del dashboard (index.html); en otras páginas el
            link lleva al dashboard. #}
         <span class="nav-cfg-wrap" id="panel-config-wrap">
-          <a href="/" id="nav-config-btn">CONFIG</a>
+          <a href="{{ url_for('index') }}" id="nav-config-btn">CONFIG</a>
           <div class="panel-config-menu" id="panel-config-menu"></div>
         </span>
-        {# Selector de fuente de datos (BYMA open / realtime / Data912). Se
-           autocarga por HTMX → presente en todas las páginas. #}
-        <details class="source-dd" id="source-wrap"
-                 hx-get="/source/menu" hx-trigger="load"
-                 hx-target="#source-wrap" hx-swap="outerHTML"></details>
+
         <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">◑</button>
         {# Logout por POST (no GET, anti-CSRF). Solo si hay sesión. #}
         {% if current_user %}
