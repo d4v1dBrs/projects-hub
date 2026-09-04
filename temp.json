@@ -1,0 +1,1876 @@
+[
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.5,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.39,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.27,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.16,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.05,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.93,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.82,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.7,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.59,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.48,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.36,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.25,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.14,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.02,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.91,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.8,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.68,
+        "date": "2035-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.57,
+        "date": "2036-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.45,
+        "date": "2036-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.34,
+        "date": "2037-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.23,
+        "date": "2037-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.11,
+        "date": "2038-01-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AE38",
+    "residual_value": 100,
+    "ticker": "AE38"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 10.0,
+        "coupon": 0.35,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.3,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.25,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.2,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.15,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.1,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.05,
+        "date": "2029-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AL29",
+    "residual_value": 100,
+    "ticker": "AL29"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 8.0,
+        "coupon": 0.27,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.24,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.21,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.42,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.35,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.28,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.21,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.14,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.07,
+        "date": "2030-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AL30",
+    "residual_value": 100,
+    "ticker": "AL30"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.06,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.06,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.06,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.38,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.38,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 2.5,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 2.25,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 2.0,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.75,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.5,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.25,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.0,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.75,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.5,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.25,
+        "date": "2035-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AL35",
+    "residual_value": 100,
+    "ticker": "AL35"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 1.75,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.75,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.75,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.75,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.69,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.63,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.56,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 2.0,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 2.0,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.92,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.83,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.74,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.65,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.57,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.48,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.39,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.31,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.22,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.13,
+        "date": "2035-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.05,
+        "date": "2036-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.96,
+        "date": "2036-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.87,
+        "date": "2037-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.78,
+        "date": "2037-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.7,
+        "date": "2038-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.61,
+        "date": "2038-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.52,
+        "date": "2039-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.44,
+        "date": "2039-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.35,
+        "date": "2040-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.26,
+        "date": "2040-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.18,
+        "date": "2041-01-09"
+      },
+      {
+        "amortization": 3.61,
+        "coupon": 0.09,
+        "date": "2041-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AL41",
+    "residual_value": 100,
+    "ticker": "AL41"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 3.03,
+        "date": "2026-05-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 3.25,
+        "date": "2026-11-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 3.25,
+        "date": "2027-05-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 3.25,
+        "date": "2027-11-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 3.25,
+        "date": "2028-05-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 3.25,
+        "date": "2028-11-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 3.25,
+        "date": "2029-05-30"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 3.25,
+        "date": "2029-11-30"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AN29",
+    "residual_value": 100,
+    "ticker": "AN29"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2026-02-27"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.57,
+        "date": "2026-03-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.48,
+        "date": "2026-05-29"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.52,
+        "date": "2026-06-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-07-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-08-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-09-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-10-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-11-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-12-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.48,
+        "date": "2027-01-29"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.45,
+        "date": "2027-02-26"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.58,
+        "date": "2027-03-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-05-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-06-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-07-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-08-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-09-30"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 0.48,
+        "date": "2027-10-29"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "AO27D",
+    "residual_value": 100,
+    "ticker": "AO27D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-05-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-06-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-07-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-08-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-09-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-10-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-11-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2026-12-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-01-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-02-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-03-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-04-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-05-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-06-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-07-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-08-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-09-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-10-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-11-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2027-12-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-01-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-02-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-03-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-04-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-05-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-06-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-07-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-08-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-09-28"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.5,
+        "date": "2028-10-28"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 0.5,
+        "date": "2028-10-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "nan",
+    "name": "AO28D",
+    "residual_value": 100,
+    "ticker": "AO28D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-10-31"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 2.5,
+        "date": "2027-04-30"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 1.25,
+        "date": "2027-10-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "nan",
+    "name": "BPA7D",
+    "residual_value": 100,
+    "ticker": "BPA7D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-10-31"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 2.5,
+        "date": "2027-04-30"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 1.25,
+        "date": "2027-10-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "nan",
+    "name": "BPB7D",
+    "residual_value": 100,
+    "ticker": "BPB7D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 1.5,
+        "date": "2026-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.5,
+        "date": "2026-10-31"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.5,
+        "date": "2027-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.5,
+        "date": "2027-10-31"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 1.5,
+        "date": "2028-04-30"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 0.75,
+        "date": "2028-10-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "nan",
+    "name": "BPB8D",
+    "residual_value": 100,
+    "ticker": "BPB8D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-04-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-10-31"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 2.5,
+        "date": "2027-04-30"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 1.25,
+        "date": "2027-10-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "nan",
+    "name": "BPC7D",
+    "residual_value": 100,
+    "ticker": "BPC7D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-10-31"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 2.5,
+        "date": "2027-04-30"
+      },
+      {
+        "amortization": 50.0,
+        "coupon": 1.25,
+        "date": "2027-10-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "BPD7D",
+    "residual_value": 100,
+    "ticker": "BPD7D"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 34.0,
+        "coupon": 0.26,
+        "date": "2026-05-31"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "nan",
+    "name": "BPY26",
+    "residual_value": 100,
+    "ticker": "BPY26"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 10.0,
+        "coupon": 0.35,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.3,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.25,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.2,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.15,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.1,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.05,
+        "date": "2029-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "GD29",
+    "residual_value": 100,
+    "ticker": "GD29"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 8.0,
+        "coupon": 0.27,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.24,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.21,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.42,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.35,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.28,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.21,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.14,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 8.0,
+        "coupon": 0.07,
+        "date": "2030-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "GD30",
+    "residual_value": 100,
+    "ticker": "GD30"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.06,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.06,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.06,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.38,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.38,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 2.5,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 2.25,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 2.0,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.75,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.5,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.25,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 1.0,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.75,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.5,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 10.0,
+        "coupon": 0.25,
+        "date": "2035-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "GD35",
+    "residual_value": 100,
+    "ticker": "GD35"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 2.5,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.5,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.39,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.27,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.16,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 2.05,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.93,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.82,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.7,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.59,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.48,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.36,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.25,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.14,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 1.02,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.91,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.8,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.68,
+        "date": "2035-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.57,
+        "date": "2036-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.45,
+        "date": "2036-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.34,
+        "date": "2037-01-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.23,
+        "date": "2037-07-09"
+      },
+      {
+        "amortization": 4.5454,
+        "coupon": 0.11,
+        "date": "2038-01-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "GD38",
+    "residual_value": 100,
+    "ticker": "GD38"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 1.75,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.75,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 1.75,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.75,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.69,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.63,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.56,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 2.0,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 2.0,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.92,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.83,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.74,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.65,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.57,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.48,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.39,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.31,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.22,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.13,
+        "date": "2035-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 1.05,
+        "date": "2036-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.96,
+        "date": "2036-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.87,
+        "date": "2037-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.78,
+        "date": "2037-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.7,
+        "date": "2038-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.61,
+        "date": "2038-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.52,
+        "date": "2039-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.44,
+        "date": "2039-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.35,
+        "date": "2040-01-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.26,
+        "date": "2040-07-09"
+      },
+      {
+        "amortization": 3.57,
+        "coupon": 0.18,
+        "date": "2041-01-09"
+      },
+      {
+        "amortization": 3.61,
+        "coupon": 0.09,
+        "date": "2041-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "GD41",
+    "residual_value": 100,
+    "ticker": "GD41"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 2.27,
+        "coupon": 1.92,
+        "date": "2026-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.88,
+        "date": "2027-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.83,
+        "date": "2027-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.79,
+        "date": "2028-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.84,
+        "date": "2028-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 2.09,
+        "date": "2029-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.99,
+        "date": "2029-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.93,
+        "date": "2030-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.88,
+        "date": "2030-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.82,
+        "date": "2031-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.76,
+        "date": "2031-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.7,
+        "date": "2032-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.65,
+        "date": "2032-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.59,
+        "date": "2033-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.53,
+        "date": "2033-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.48,
+        "date": "2034-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.42,
+        "date": "2034-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.36,
+        "date": "2035-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.31,
+        "date": "2035-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.25,
+        "date": "2036-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.19,
+        "date": "2036-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.14,
+        "date": "2037-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.08,
+        "date": "2037-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 1.02,
+        "date": "2038-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.97,
+        "date": "2038-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.91,
+        "date": "2039-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.85,
+        "date": "2039-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.8,
+        "date": "2040-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.74,
+        "date": "2040-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.68,
+        "date": "2041-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.63,
+        "date": "2041-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.57,
+        "date": "2042-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.51,
+        "date": "2042-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.45,
+        "date": "2043-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.4,
+        "date": "2043-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.34,
+        "date": "2044-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.28,
+        "date": "2044-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.23,
+        "date": "2045-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.17,
+        "date": "2045-07-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.11,
+        "date": "2046-01-09"
+      },
+      {
+        "amortization": 2.27,
+        "coupon": 0.06,
+        "date": "2046-07-09"
+      }
+    ],
+    "category": "Bonares y Globales",
+    "currency_issue": "USD",
+    "currency_payment": "USD",
+    "day_count": "30/360",
+    "name": "GD46",
+    "residual_value": 100,
+    "ticker": "GD46"
+  },
+  {
+    "cashflow": [],
+    "category": "CER",
+    "currency_issue": "ARS",
+    "currency_payment": "ARS",
+    "day_count": "30/360",
+    "name": "None",
+    "residual_value": 100,
+    "ticker": "None"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2024-12-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2025-06-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2025-12-30"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 0.0,
+        "date": "2026-06-30"
+      }
+    ],
+    "category": "Dolar_Linked",
+    "currency_issue": "ARS",
+    "currency_payment": "ARS",
+    "day_count": "nan",
+    "name": "TZV26",
+    "residual_value": 100,
+    "ticker": "TZV26"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2025-03-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2025-09-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2026-03-30"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 0.0,
+        "date": "2026-09-30"
+      }
+    ],
+    "category": "Dolar_Linked",
+    "currency_issue": "ARS",
+    "currency_payment": "ARS",
+    "day_count": "nan",
+    "name": "D30S6",
+    "residual_value": 100,
+    "ticker": "D30S6"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2025-12-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2026-06-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2026-12-30"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 0.0,
+        "date": "2027-06-30"
+      }
+    ],
+    "category": "Dolar_Linked",
+    "currency_issue": "ARS",
+    "currency_payment": "ARS",
+    "day_count": "nan",
+    "name": "TZV27",
+    "residual_value": 100,
+    "ticker": "TZV27"
+  },
+  {
+    "cashflow": [
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2026-12-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2027-06-30"
+      },
+      {
+        "amortization": 0.0,
+        "coupon": 0.0,
+        "date": "2027-12-30"
+      },
+      {
+        "amortization": 100.0,
+        "coupon": 0.0,
+        "date": "2028-06-30"
+      }
+    ],
+    "category": "Dolar_Linked",
+    "currency_issue": "ARS",
+    "currency_payment": "ARS",
+    "day_count": "nan",
+    "name": "TZV28",
+    "residual_value": 100,
+    "ticker": "TZV28"
+  }
+]

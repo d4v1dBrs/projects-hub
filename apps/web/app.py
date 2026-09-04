@@ -40,7 +40,7 @@ from apps.web.routers import auth as auth_router, users_abm
 from apps.web.deps import get_bondterminal, get_repo, get_state
 from apps.web.routers import (
     abm, bcra, bonds, cartera, cashflows, catalog, curva, escenarios, fci, header,
-    on, options, panels, source, stream,
+    on, options, panels, source, stream, personal
 )
 from apps.web.state import AppState
 from apps.web.supervisor import supervise
@@ -693,8 +693,10 @@ app.include_router(users_abm.router)
 html_deps = [Depends(get_current_user_html)]
 api_deps = [Depends(get_current_user)]
 
-app.include_router(panels.router, dependencies=[Depends(RequireTabPermission("bonos"))])
-app.include_router(bonds.router, dependencies=[Depends(RequireTabPermission("bonos"))])
+app.include_router(personal.router)
+
+app.include_router(panels.router)
+app.include_router(bonds.router)
 app.include_router(on.router, dependencies=[Depends(RequireTabPermission("on"))])
 app.include_router(curva.router, dependencies=[Depends(RequireTabPermission("curva"))])
 app.include_router(cartera.router, dependencies=[Depends(RequireTabPermission("cartera"))])
@@ -707,9 +709,9 @@ app.include_router(catalog.router, dependencies=[Depends(RequireTabPermission("c
 app.include_router(abm.router, dependencies=[Depends(RequireTabPermission("abm"))])
 
 # Parciales globales de HTMX
-app.include_router(header.router, dependencies=html_deps)
-app.include_router(source.router, dependencies=html_deps)
-app.include_router(stream.router, dependencies=html_deps)
+app.include_router(header.router)
+app.include_router(source.router)
+app.include_router(stream.router)
 
 
 

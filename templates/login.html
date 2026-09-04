@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Data Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: var(--dark-slate);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            text-align: center;
+        }
+        .login-container h2 {
+            color: var(--neon-cyan);
+            margin-bottom: 20px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            background: var(--deeper-slate);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 6px;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: var(--neon-cyan);
+            color: var(--deep-slate);
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .login-container button:hover {
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+        .flash-message {
+            color: var(--neon-orange);
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Data Hub Admin</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <input type="password" name="password" placeholder="Contraseña Maestra" required>
+            <button type="submit">Ingresar</button>
+        </form>
+    </div>
+</body>
+</html>
