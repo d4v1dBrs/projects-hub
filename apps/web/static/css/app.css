@@ -521,3 +521,43 @@ table.scen tr.mine td { color: var(--accent); font-weight: 600; }
 .uni-loading { text-align: center; color: var(--text-faint); font-size: 11px; font-style: italic; padding: 10px; }
 .uni-empty { color: var(--text-faint); font-style: italic; padding: 40px; text-align: center; }
 
+
+/* --- GLOBAL TOP NAV --- */
+.top-nav {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0px;
+    height: 40px;
+    background: var(--head-bg);
+}
+.menu-icon {
+    color: var(--text-dim);
+    padding: 0 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.nav-links {
+    display: flex;
+    height: 100%;
+}
+.nav-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 0 30px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+}
+.nav-link:hover {
+    color: var(--text);
+}
+.nav-link.active {
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    background: linear-gradient(to top, rgba(0, 240, 255, 0.1) 0%, transparent 50%);
+}

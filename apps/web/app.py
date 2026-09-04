@@ -39,8 +39,8 @@ from apps.web.routers import auth as auth_router, users_abm
 
 from apps.web.deps import get_bondterminal, get_repo, get_state
 from apps.web.routers import (
-    abm, bcra, bonds, cartera, cashflows, catalog, curva, escenarios, fci, header,
-    on, options, panels, source, stream, personal
+    abm, bcra, bonds, header,
+    panels, source, stream, personal, users_abm
 )
 from apps.web.state import AppState
 from apps.web.supervisor import supervise
@@ -589,10 +589,8 @@ async def lifespan(app: FastAPI):
                 name=f"loop:{name}")
             for name, fn in (
                 ("refresh", _refresh_loop),
-                ("options", _options_loop),
                 ("bei", _bei_loop),
                 ("price_history", _price_history_loop),
-                ("ratings", _ratings_loop),
             )
         ]
     try:
@@ -697,15 +695,7 @@ app.include_router(personal.router)
 
 app.include_router(panels.router)
 app.include_router(bonds.router)
-app.include_router(on.router, dependencies=[Depends(RequireTabPermission("on"))])
-app.include_router(curva.router, dependencies=[Depends(RequireTabPermission("curva"))])
-app.include_router(cartera.router, dependencies=[Depends(RequireTabPermission("cartera"))])
 app.include_router(bcra.router, dependencies=[Depends(RequireTabPermission("bcra"))])
-app.include_router(cashflows.router, dependencies=[Depends(RequireTabPermission("cashflows"))])
-app.include_router(fci.router, dependencies=[Depends(RequireTabPermission("fci"))])
-app.include_router(escenarios.router, dependencies=[Depends(RequireTabPermission("escenarios"))])
-app.include_router(options.router, dependencies=[Depends(RequireTabPermission("opciones"))])
-app.include_router(catalog.router, dependencies=[Depends(RequireTabPermission("catalogo"))])
 app.include_router(abm.router, dependencies=[Depends(RequireTabPermission("abm"))])
 
 # Parciales globales de HTMX

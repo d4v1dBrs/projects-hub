@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bonos Argy - Monitor de Mercado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/quant_engine.js') }}"></script>
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .bonds-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--dark-slate);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+        .bonds-table th, .bonds-table td {
+            padding: 12px 15px;
+            text-align: right;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .bonds-table th:first-child, .bonds-table td:first-child {
+            text-align: left;
+        }
+        .bonds-table th {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--neon-cyan);
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .bonds-table td {
+            color: #ddd;
+            font-size: 14px;
+        }
+        .category-header {
+            background: var(--deeper-slate) !important;
+            color: var(--neon-orange) !important;
+            font-size: 16px !important;
+            text-align: left !important;
+            border-top: 2px solid rgba(255,157,0,0.5);
+        }
+        .ticker-col {
+            font-weight: bold;
+            color: white !important;
+        }
+        .spinner {
+            text-align: center;
+            color: var(--neon-cyan);
+            padding: 50px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav" style="background-color: var(--panel-bg);">
+        <div class="menu-icon"><a href="{{ url_for('resume') }}" style="color: inherit; text-decoration: none;"><i class="fas fa-home"></i></a></div>
+        <div class="nav-links">
+            <a href="{{ url_for('resume') }}" class="nav-link">Dashboard (Resumen)</a>
+            <a href="{{ url_for('projects') }}" class="nav-link">Proyectos: Coding</a>
+            <a href="{{ url_for('bonos') }}" class="nav-link active">Bonos Argy</a>
+            <a href="{{ url_for('login') }}" class="nav-link">Admin</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <h1 style="color: var(--neon-cyan); margin-bottom: 30px;">Monitor de Bonos Argy</h1>
+        
+        <div id="loading" class="spinner">Calculando métricas de mercado...</div>
+        
+        <table class="bonds-table" id="bondsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Ticker</th>
+                    <th>Nombre</th>
+                    <th>Vencimiento</th>
+                    <th>Moneda</th>
+                    <th>Precio</th>
+                    <th>TIR (XIRR)</th>
+                    <th>Duración (Mod)</th>
+                    <th>Paridad</th>
+                </tr>
+            </thead>
+            <tbody id="bondsBody">
+                <!-- Javascript will populate this -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Fetch Data
+                const [masterRes, quotesRes] = await Promise.all([
+                    fetch('/api/bonds/master'),
+                    fetch('/api/bonds/quotes')
+                ]);
+                const bondsMaster = await masterRes.json();
+                const quotes = await quotesRes.json();
+                
+                // Group bonds by category
+                const categories = {};
+                
+                // Today's Date (Settlement T+0 for simplicity)
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                bondsMaster.forEach(bond => {
+                    const price = quotes[bond.ticker] || null;
+                    let tirStr = "-";
+                    let modDurStr = "-";
+                    let parityStr = "-";
+                    
+                    if (price && bond.cashflow && bond.cashflow.length > 0) {
+                        // Create cashflow array including the price (negative CF today)
+                        const cfs = QuantEngine.buildCashflowArray(bond, price, todayStr);
+                        
+                        // Calculate TIR
+                        const tir = QuantEngine.calculateXIRR(cfs, bond.day_count, 0.10);
+                        if (tir !== null) {
+                            tirStr = (tir * 100).toFixed(2) + "%";
+                            // Calculate Durations
+                            const { modified } = QuantEngine.calculateDurations(tir, cfs, bond.day_count);
+                            modDurStr = modified.toFixed(2);
+                        }
+                        
+                        // Parity calculation (very simplified: Price / Residual Value)
+                        const parity = (price / parseFloat(bond.residual_value)) * 100;
+                        parityStr = parity.toFixed(2) + "%";
+                    }
+
+                    // Find maturity date (last cashflow)
+                    let maturity = "-";
+                    if (bond.cashflow.length > 0) {
+                        maturity = bond.cashflow[bond.cashflow.length - 1].date;
+                    }
+
+                    if (!categories[bond.category]) categories[bond.category] = [];
+                    categories[bond.category].push({
+                        ...bond,
+                        priceStr: price ? price.toFixed(2) : "-",
+                        tirStr,
+                        modDurStr,
+                        parityStr,
+                        maturity
+                    });
+                });
+
+                // Render Table
+                const tbody = document.getElementById('bondsBody');
+                for (const [catName, bondsList] of Object.entries(categories)) {
+                    // Render Category Header
+                    const trCat = document.createElement('tr');
+                    trCat.innerHTML = `<td colspan="8" class="category-header">${catName}</td>`;
+                    tbody.appendChild(trCat);
+                    
+                    // Render Bonds
+                    bondsList.forEach(b => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="ticker-col">${b.ticker}</td>
+                            <td>${b.name}</td>
+                            <td>${b.maturity}</td>
+                            <td>${b.currency_payment}</td>
+                            <td>${b.priceStr}</td>
+                            <td style="color: ${b.tirStr.includes('-') && b.tirStr !== '-' ? '#ff4d4d' : 'var(--neon-cyan)'}">${b.tirStr}</td>
+                            <td>${b.modDurStr}</td>
+                            <td>${b.parityStr}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('bondsTable').style.display = 'table';
+
+            } catch (err) {
+                console.error("Error loading bonds", err);
+                document.getElementById('loading').innerText = "Error cargando datos del mercado.";
+                document.getElementById('loading').style.color = "#ff4d4d";
+            }
+        });
+    </script>
+</body>
+</html>
