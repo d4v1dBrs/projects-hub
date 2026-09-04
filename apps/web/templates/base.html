@@ -180,6 +180,9 @@
             hx-swap="innerHTML">
         <span class="meta"><span class="live"></span>{% if last_refresh %}act {{ last_refresh.strftime("%H:%M:%S") }}{% else %}en vivo{% endif %}</span>
       </span>
+      <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 10px; white-space: nowrap; border-left: 1px solid var(--border-color); padding-left: 10px;">
+        Datos: OpenBymada & Data912 (Delay 20m)
+      </span>
       <nav>
         {% if has_tab("bonos") %}<a href="{{ url_for('index') }}">Bonos</a>{% endif %}
 
@@ -193,9 +196,6 @@
         {% if has_tab("catalogo") %}<a href="/catalogo">Catálogo</a>{% endif %}
         {% if has_tab("abm") %}<a href="/abm">ABM Bonos</a>{% endif %}
         {% if current_user and current_user.is_admin %}<a href="/users" style="color: #60a5fa; font-weight: bold;">Manager</a>{% endif %}
-        <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 15px;">
-          Datos de OpenBymada y Data912 (Delay 20 min)
-        </span>
         {# CONFIG de paneles: elegir qué cuadros ver / restaurar los cerrados con X.
            El menú lo arma el JS del dashboard (index.html); en otras páginas el
            link lleva al dashboard. #}
