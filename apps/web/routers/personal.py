@@ -11,3 +11,7 @@ def resume(request: Request):
 @router.get("/projects", response_class=HTMLResponse)
 def projects(request: Request):
     return TEMPLATES.TemplateResponse(request, "personal/projects.html", {})
+
+@router.get("/bonos", response_class=HTMLResponse)
+def bonos(request: Request):
+    return TEMPLATES.TemplateResponse(request, "personal/bonos.html", {})
