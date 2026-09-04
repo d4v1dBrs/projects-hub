@@ -162,9 +162,8 @@ PANELS = {
     "bei_pares": ("MÉTODO DE PARES (cross-check NT8 §A)", set(), _BEI_PARES_COLS),
 }
 PANEL_ORDER = ["bonares", "cer", "tasa_fija", "tamar", "dolar_linked", "bopreales",
-               "obligaciones_negociables", "provinciales",
-               "valor_relativo", "panel_lider", "futuros",
-               "bei_tenor", "bei_sendero", "bei_pares"]
+               "panel_lider", "futuros",
+               "bei_tenor", "bei_sendero"]
 
 # Paneles cuyas especies cotizan en 3 monedas (mismo bono): se les agrega el filtro
 # ARS/MEP/CABLE en el header (default MEP). La moneda se deriva del sufijo del ticker
