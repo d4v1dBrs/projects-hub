@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 </head>
 <body>
     <div class="app-container">
@@ -19,7 +19,7 @@
                 <a href="{{ url_for('resume') }}" class="nav-link">Dashboard (Resumen)</a>
                 <a href="{{ url_for('projects') }}" class="nav-link active">Proyectos: Coding</a>
                 <a href="{{ url_for('index') }}" class="nav-link">Bonos Argy</a>
-                <a href="{{ url_for('login') }}" class="nav-link">Admin</a>
+                <a href="{{ url_for('login_page') }}" class="nav-link">Admin</a>
             </div>
         </nav>
 
