@@ -42,6 +42,10 @@ body {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0px;
     height: 40px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: var(--dark-slate);
 }
 
 .menu-icon {

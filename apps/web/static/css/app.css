@@ -530,6 +530,9 @@ table.scen tr.mine td { color: var(--accent); font-weight: 600; }
     padding-bottom: 0px;
     height: 40px;
     background: var(--head-bg);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 .menu-icon {
     color: var(--text-dim);
