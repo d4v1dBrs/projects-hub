@@ -39,14 +39,14 @@ from apps.web.routers import auth as auth_router, users_abm
 
 from apps.web.deps import get_bondterminal, get_repo, get_state
 from apps.web.routers import (
-    abm, bcra, bonds, header,
+    abm, bonds, header,
     panels, source, stream, personal, users_abm
 )
 from apps.web.state import AppState
 from apps.web.supervisor import supervise
 from config.settings import settings
 from core.domain.instrument_groups import (
-    BOPREALES, CER, DOLAR_LINKED, DUAL_TAMAR, OBLIGACIONES_NEGOCIABLES,
+    BOPREALES, CER, DOLAR_LINKED, DUAL_TAMAR,
     PROVINCIALES, SOBERANOS, TAMAR, TASA_FIJA,
 )
 from core.infrastructure.async_http import ResilientClient
@@ -55,7 +55,7 @@ from core.infrastructure.provider_hub import ProviderHub
 logger = logging.getLogger(__name__)
 
 _ALL_TYPES = [*SOBERANOS, *BOPREALES, *TASA_FIJA, *CER, *DOLAR_LINKED, *TAMAR,
-              *DUAL_TAMAR, *OBLIGACIONES_NEGOCIABLES, *PROVINCIALES]
+              *DUAL_TAMAR, *PROVINCIALES]
 
 
 
@@ -106,34 +106,6 @@ async def _refresh_loop(app: FastAPI) -> None:
             await app.state.app_state.record_error(f"{type(e).__name__}: {e}")
 
 
-async def _options_loop(app: FastAPI) -> None:
-    """Loop dedicado de la chain de opciones (pesado: parser + CRR + griegos de
-    ~1000 contratos, ~5-20s). Separado del `_refresh_loop` para no arrastrar el
-    push SSE de los paneles de bonos. Corre 1× al arranque y luego cada
-    `options_refresh_sec` (default 60s: los griegos no cambian material/segundo)."""
-    from core.domain.options.chain import build_options
-
-    first = True
-    while True:
-        if not first:
-            await asyncio.sleep(settings.options_refresh_sec)
-        first = False
-        try:
-            _t0 = time.perf_counter()
-            # Snapshot aparte (BYMA open /options por defecto — OI real +
-            # underlyingSymbol/optionType/maturityDate autoritativos; Data912 de
-            # fallback). El hub elige la fuente y resuelve los subyacentes.
-            opt_rows, stk_rows = await app.state.hub.fetch_options(settings.options_source)
-            items = await asyncio.to_thread(build_options, opt_rows, stk_rows)
-            app.state.app_state.set_options(items)
-            _lvl = logging.WARNING if (time.perf_counter() - _t0) > settings.refresh_sec else logging.INFO
-            logger.log(_lvl, "options cycle: %.2fs (%d opts)",
-                       time.perf_counter() - _t0, len(items))
-        except asyncio.CancelledError:
-            raise
-        except Exception:  # noqa: BLE001 — un fallo de opciones no debe tumbar el loop
-            logger.exception("options loop iteration failed")
-
 
 def _catalog_health_report(repo) -> dict:
     """Reporte publicable de la salud del catálogo, leído del repo ya cargado.
@@ -181,31 +153,9 @@ async def _publish_catalog_health(app: FastAPI, repo) -> dict:
     return rep
 
 
-def _ensure_obligaciones_negociables() -> int:
-    """Bootstrap de las ONs desde el CSV **sólo si la hoja está vacía**.
-
-    Modelo de catálogo (decisión 2026-05-30): la **fuente de verdad en runtime es
-    SQLite** (`catalog.db`); el Excel master y `obligaciones_negociables.csv` son
-    semillas de *bootstrap* y la ABM es el editor. Por eso el seed NO re-ingesta de
-    forma destructiva sobre una hoja ya poblada — eso pisaría las ON cargadas/editadas
-    por la ABM (que no están en el CSV, ej. bancos 30/360). Para aplicar cambios del
-    CSV a una DB ya poblada, usar una migración explícita o la ABM, no este auto-seed.
-    """
-    from sqlalchemy import select
-    from core.infrastructure.db.engine import SessionLocal
-    from core.infrastructure.db.models import InstrumentORM
-    from core.infrastructure.on_catalog import SHEET, ingest
-
-    with SessionLocal() as s:
-        ons = s.execute(select(InstrumentORM).where(InstrumentORM.sheet == SHEET)).scalars().all()
-    if ons:  # la DB ya tiene ON = la verdad → no re-sembrar (no pisar la ABM)
-        return 0
-    return ingest()  # hoja vacía → bootstrap inicial desde el CSV
-
-
 def _reconcile_catalog(hub) -> int:
     """Sync (corre en to_thread): completa patas de moneda de soberanos + da de
-    alta las acciones (solo-ticker, categoría Acciones) + carga las ONs hard-dollar.
+    alta las acciones (solo-ticker, categoría Acciones).
     Devuelve cuántas filas se agregaron/modificaron."""
     from apps.web.instruments_abm import backfill_soberano_ccy_legs, register_stocks
     from core.domain.instrument_groups import PANEL_LIDER
@@ -214,12 +164,8 @@ def _reconcile_catalog(hub) -> int:
     legs = backfill_soberano_ccy_legs(set(snapshot.keys()))
     stock_syms = [s for s, src in sources.items() if src == "stocks"] + list(PANEL_LIDER)
     stocks = register_stocks(stock_syms)
-    ons = 0
-    try:
-        ons = _ensure_obligaciones_negociables()
-    except Exception:
-        logger.exception("ON ingest failed")
-    return len(legs) + len(stocks) + ons
+    return len(legs) + len(stocks)
+
 
 
 def _backfill_legs() -> int:
@@ -381,90 +327,6 @@ async def _price_history_loop(app: FastAPI) -> None:
             logger.warning("poda de price_history falló", exc_info=True)
         await asyncio.sleep(settings.price_history_sec)
 
-
-# Tick del monitor de calificaciones. 6h y no 24h a propósito: el corte es idempotente
-# por día (`latest_fecha`), así que un tick corto no re-scrapea — lo que compra es
-# REINTENTO: si fixscr.com está caído a la hora del arranque, el día todavía tiene
-# 3 chances más antes de perderse. No va a settings: no hay nada que tunear en runtime.
-_RATINGS_TICK_SEC = 6 * 3600
-
-
-def _invalidate_ratings_cache() -> None:
-    """Suelta el cache del read-path de calificaciones para que el corte recién grabado
-    se vea EN CALIENTE (mismo criterio que el `repo.reload()` de la ABM).
-
-    Se prefiere el hook explícito del módulo; si no lo expone, se barren los
-    `cache_clear` de sus miembros memoizados (`_entries` arma el merge CSV+store y
-    `rating_for` memoiza el matcher por emisor). El barrido genérico evita acoplar este
-    loop a QUÉ funciones cachea `ratings.py` — si mañana el cache se rekeya por fecha de
-    corte y se invalida solo, esto queda como un no-op inofensivo."""
-    from core.infrastructure import ratings
-
-    hook = getattr(ratings, "invalidate_cache", None)
-    if callable(hook):
-        hook()
-        return
-    for obj in vars(ratings).values():
-        clear = getattr(obj, "cache_clear", None)
-        if callable(clear):
-            clear()
-
-
-def _ratings_corte(store, hoy) -> dict:
-    """Un corte completo de FIX SCR (SYNC: corre en `to_thread`) — scrape → mejor fila
-    por entidad → `record_corte`. Vive fuera del loop para que las ~14 requests al sitio
-    y el write SQLite queden en UN solo hop de thread.
-
-    `mejor_fila_por_entidad` es la política del spec (Emisor > Endeudamiento de Largo
-    Plazo, sin emisiones `sf(arg)`): sin ella el store vería varias filas por entidad y
-    el diff diario marcaría cambios fantasma según cuál ganara ese día."""
-    from core.infrastructure import fix_ratings
-
-    mejores = fix_ratings.mejor_fila_por_entidad(fix_ratings.fetch_listado())
-    rows = {ent: {"rating": f.rating_lp, "perspectiva": f.perspectiva,
-                  "area": f.area, "sector": f.sector}
-            for ent, f in mejores.items()}
-    return store.record_corte(rows, hoy)
-
-
-async def _ratings_loop(app: FastAPI) -> None:
-    """Monitor diario de calificaciones FIX SCR (spec 2026-08-31): persiste el corte del
-    día y deja el diff up/down/watch que el panel ON muestra como badge por 7 días.
-
-    Corre 1× al arranque y luego cada `_RATINGS_TICK_SEC`. El chequeo de `latest_fecha`
-    ANTES de scrapear es el que hace restart-safe al proceso: `record_corte` ya es
-    idempotente por día, pero preguntarle primero al store ahorra las 14 requests contra
-    un sitio que nos deja scrapearlo por cortesía. Todo (red + SQLite) va en `to_thread`:
-    el scrape dura decenas de segundos y bloquearía el event loop —y con él el SSE de
-    todos los paneles. Un fallo se loguea y se reintenta al tick siguiente: el panel
-    sigue sirviendo el último corte bueno, con su `as_of` real a la vista."""
-    from datetime import date as _date
-
-    from core.infrastructure.ratings_history import get_ratings_history_store
-
-    store = get_ratings_history_store()
-    first = True
-    while True:
-        if not first:
-            await asyncio.sleep(_RATINGS_TICK_SEC)
-        first = False
-        try:
-            hoy = _date.today()
-            if await asyncio.to_thread(store.latest_fecha) == hoy.isoformat():
-                continue                      # corte del día ya guardado → ni una request
-            res = await asyncio.to_thread(_ratings_corte, store, hoy)
-            logger.info("FIX ratings: corte %s %s — %d filas, %d cambios%s",
-                        res.get("fecha"), res.get("status"), res.get("rows", 0),
-                        res.get("changes", 0),
-                        f" ({res['reason']})" if res.get("reason") else "")
-            if res.get("status") == "ok":
-                # Solo un corte REALMENTE grabado cambia el read-path; con noop/discarded
-                # /error tirar el cache sería releer el CSV y rearmar el matcher al pedo.
-                _invalidate_ratings_cache()
-        except asyncio.CancelledError:
-            raise
-        except Exception:  # noqa: BLE001 — un scrape caído no puede tumbar el lifespan
-            logger.exception("ratings loop iteration failed")
 
 
 async def _bei_loop(app: FastAPI) -> None:
@@ -695,7 +557,6 @@ app.include_router(personal.router)
 
 app.include_router(panels.router)
 app.include_router(bonds.router)
-app.include_router(bcra.router, dependencies=[Depends(RequireTabPermission("bcra"))])
 app.include_router(abm.router, dependencies=[Depends(RequireTabPermission("abm"))])
 
 # Parciales globales de HTMX
