@@ -90,7 +90,6 @@ _DB_DERIVED: dict[str, str] = {
     "catalog_db": "catalog.db",
     "backup_dir": "backups",
     "history_state_dir": "history",
-    "price_history_db": "price_history.db",
     "fci_history_db": "fci_history.db",
     "ratings_history_db": "ratings_history.db",
     "index_history_db": "index_history.db",
@@ -164,15 +163,6 @@ class Settings(BaseSettings):
     # history_dir la primera vez y a partir de ahi acumula solo aca. → db_dir/history
     history_state_dir: Path | None = None
     backup_keep: int = 7
-    # Cierres diarios por ticker (variaciones Sem/1M/3M/YTD/1A). Se auto-mantiene
-    # (priming Data912 historical + acumulación del feed vivo) — ver price_history.py.
-    price_history_db: Path | None = None
-    # Ventana que se CONSERVA en price_history. El unico read-path
-    # (`_hist_bases`) pide 400 dias y consume hasta 377; 420 deja margen para que la
-    # poda horaria nunca corte por debajo de lo que el motor va a pedir en el mismo
-    # tick. Sin poda el store crece ~54k filas/anio (~50 MB de RAM a 5 anios); con
-    # ella el techo queda estable en ~127k filas (~12 MB).
-    price_history_keep_days: int = 420
     # Histórico FCI (vcp/ccp/patrimonio por fondo) p/ flujos reales (Δccp×VCP). Se
     # auto-mantiene acumulando el corte diario de ArgentinaDatos — ver fci_history.py.
     fci_history_db: Path | None = None
@@ -252,9 +242,6 @@ class Settings(BaseSettings):
     # cores disponibles (antes era un 20 fijo). Override por MONITOR_ENGINE_WORKERS.
     engine_workers: int = min(8, (os.cpu_count() or 4))
     bei_refresh_sec: int = 300
-    # Mantenimiento del store de precios: prime 1× + acumula cierre del feed. Diario
-    # alcanza (la historia cambia 1×/rueda); la última escritura del día ≈ cierre.
-    price_history_sec: int = 3600
     # Priming complementario vía series históricas de BYMA open para los tickers que
     # Data912 /historical NO cubre (bopreales, letras, ON, patas MEP/CABLE). Corre 1×.
     byma_history_enabled: bool = True
@@ -280,7 +267,7 @@ class Settings(BaseSettings):
         #    los crean sus escritores, pero las .db se abren con sqlite3.connect()
         #    directo: sin el padre creado, seguir la receta de CLAUDE.md (paths por
         #    campo fuera del árbol) revienta con "unable to open database file".
-        for d in (self.db_dir, self.catalog_db.parent, self.price_history_db.parent,
+        for d in (self.db_dir, self.catalog_db.parent,
                   self.fci_history_db.parent, self.ratings_history_db.parent,
                   self.index_history_db.parent):
             try:

@@ -1,0 +1,36 @@
+<div class="absolute top-0 right-0 p-4 opacity-10">
+  <svg class="w-24 h-24 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+</div>
+
+<h4 class="text-slate-300 font-bold mb-1 flex items-center gap-2 relative z-10">
+  Horizon Analysis (Retorno Total Esperado)
+</h4>
+<p class="text-xs text-slate-500 mb-6 relative z-10">Proyección de retornos asumiendo reinversión. Tasa base (TIR): <span class="text-purple-400 font-bold">{{ "%.1f"|format(data.base_tir * 100) if data.base_tir else "0.0" }}%</span> | MD: <span class="text-slate-300">{{ "%.2f"|format(data.duration) }}</span></p>
+
+<!-- Eje X: Meses -->
+<div class="flex pl-16 mb-2 relative z-10">
+  {% for month in data.months %}
+    <div class="flex-1 text-center text-xs text-slate-400 font-bold">{{ month }}M</div>
+  {% endfor %}
+</div>
+
+<!-- Matriz -->
+<div class="flex-1 flex flex-col gap-1 relative z-10">
+  {% for row in data.matrix %}
+    <div class="flex gap-1 flex-1">
+      <!-- Eje Y: Yield Shift -->
+      <div class="w-16 flex items-center justify-end pr-3 text-xs text-slate-400 font-bold">
+        <span>{{ '+' ~ row.shift if row.shift > 0 else row.shift }} bps</span>
+      </div>
+      
+      <!-- Celdas -->
+      {% for cell in row.cells %}
+        <div class="flex-1 rounded border border-slate-800/50 flex items-center justify-center font-mono text-sm font-bold shadow-sm transition-transform hover:scale-105 cursor-crosshair"
+             style="{{ cell.style }}">
+          {{ "%.1f"|format(cell.value) }}%
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+<p class="text-[10px] text-slate-600 mt-4 text-center">Nota: Datos calculados por el motor de FastAPI (Pricing Strategy Taylor Exp).</p>

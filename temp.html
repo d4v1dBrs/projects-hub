@@ -8,8 +8,8 @@
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-{% set m = d.metrics %}
-{% set meta = d.meta %}
+
+
 
 <!-- 
   Modal Overlay: Usamos z-[9999] para asegurar que cubra el header global de la app.
@@ -43,8 +43,8 @@
       <div class="flex-1 overflow-y-auto p-5">
         <div class="flex justify-between items-start mb-6">
           <div>
-            <h2 class="text-3xl font-bold text-white tracking-tight">{{ d.ticker }}</h2>
-            <p class="text-xs text-slate-400 mt-1 uppercase tracking-wider">{{ meta.short_name }}</p>
+            <h2 class="text-3xl font-bold text-white tracking-tight">AL30</h2>
+            <p class="text-xs text-slate-400 mt-1 uppercase tracking-wider">AL30</p>
           </div>
           <button class="text-slate-500 hover:text-white transition-colors" 
                   onclick="document.getElementById('modal').innerHTML=''">
@@ -56,25 +56,25 @@
           <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
             <div class="text-xs text-slate-400 mb-1">Precio</div>
             <div class="text-lg font-mono font-semibold text-white">
-              {% if d.market.price is not none %}${{ '%.2f'|format(d.market.price) }}{% else %}—{% endif %}
+              $85300.00
             </div>
           </div>
           <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
             <div class="text-xs text-slate-400 mb-1">TIR (TEA)</div>
             <div class="text-lg font-mono font-semibold text-cyan-400">
-              {% if m.tir is not none %}{{ '%.2f'|format(m.tir * 100) }}%{% else %}—{% endif %}
+              -90.12%
             </div>
           </div>
           <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
             <div class="text-xs text-slate-400 mb-1">Paridad</div>
             <div class="text-lg font-mono font-semibold text-slate-200">
-              {% if m.parity is not none %}{{ '%.2f'|format(m.parity * 100) }}%{% else %}—{% endif %}
+              133120.40%
             </div>
           </div>
           <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
             <div class="text-xs text-slate-400 mb-1">Duration</div>
             <div class="text-lg font-mono font-semibold text-slate-200">
-              {% if m.duration is not none %}{{ '%.2f'|format(m.duration) }}{% else %}—{% endif %}
+              11.47
             </div>
           </div>
         </div>
@@ -82,25 +82,25 @@
         <div class="space-y-3 text-sm">
           <div class="flex justify-between py-1 border-b border-slate-800">
             <span class="text-slate-400">Moneda</span>
-            <span class="text-slate-200 font-medium">{{ meta.currency }}</span>
+            <span class="text-slate-200 font-medium">ARS</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-800">
             <span class="text-slate-400">Vencimiento</span>
-            <span class="text-slate-200 font-medium">{{ meta.fecha_vencimiento or '—' }}</span>
+            <span class="text-slate-200 font-medium">2030-07-09</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-800">
             <span class="text-slate-400">Cupón</span>
-            <span class="text-slate-200 font-medium">{{ meta.cupon }}</span>
+            <span class="text-slate-200 font-medium">Tasa fija 0.750% anual</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-800">
             <span class="text-slate-400">Tipo</span>
-            <span class="text-slate-200 font-medium">{{ meta.instrument_type }}</span>
+            <span class="text-slate-200 font-medium">BONAR</span>
           </div>
         </div>
       </div>
       
       <div class="p-4 bg-slate-950/50 text-xs text-slate-500 text-center border-t border-slate-800">
-        Datos a T+{{ d.settlement_lag }} · Liquidación: {{ d.settle_date }}
+        Datos a T+1 · Liquidación: 2026-09-07
       </div>
     </aside>
 
@@ -157,12 +157,12 @@
              <div class="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
                 <div class="flex items-center gap-3">
                   <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-mono font-bold rounded">MERCADO ABIERTO</span>
-                  <span class="text-slate-400 text-sm">Volumen Nominal: <span class="text-white font-mono">{% if d.market.volume is not none %}{{ d.market.volume|round(0, 'floor') }}{% else %}—{% endif %}</span></span>
+                  <span class="text-slate-400 text-sm">Volumen Nominal: <span class="text-white font-mono">104320302.0</span></span>
                 </div>
                 <div class="flex items-center gap-4 text-sm">
                   <span class="text-slate-400">Variación: 
-                    <span class="font-mono font-bold {% if d.market.change_pct and d.market.change_pct > 0 %}text-green-400{% elif d.market.change_pct and d.market.change_pct < 0 %}text-red-400{% else %}text-slate-300{% endif %}">
-                      {% if d.market.change_pct is not none %}{{ '%.2f'|format(d.market.change_pct) }}%{% else %}—{% endif %}
+                    <span class="font-mono font-bold text-slate-300">
+                      —
                     </span>
                   </span>
                 </div>
@@ -177,88 +177,37 @@
                   
                   <div class="flex justify-between items-center bg-slate-800/50 p-4 rounded border border-red-900/30 mb-4">
                     <div class="text-slate-500 uppercase text-xs font-bold">Mejor Oferta (Ask)</div>
-                    <div class="text-2xl font-mono text-red-400 font-bold">{% if d.market.ask is not none %}${{ '%.2f'|format(d.market.ask) }}{% else %}—{% endif %}</div>
+                    <div class="text-2xl font-mono text-red-400 font-bold">$85300.00</div>
                   </div>
 
                   <div class="flex justify-between items-center py-2 px-4 mb-4">
                     <div class="text-slate-500 uppercase text-xs font-bold">Spread</div>
                     <div class="text-lg font-mono text-slate-300">
-                      {% if d.market.ask is not none and d.market.bid is not none %}
-                        ${{ '%.2f'|format(d.market.ask - d.market.bid) }}
-                      {% else %}
-                        —
-                      {% endif %}
+                      
+                        $90.00
+                      
                     </div>
                   </div>
 
                   <div class="flex justify-between items-center bg-slate-800/50 p-4 rounded border border-green-900/30 mb-6">
                     <div class="text-slate-500 uppercase text-xs font-bold">Mejor Demanda (Bid)</div>
-                    <div class="text-2xl font-mono text-green-400 font-bold">{% if d.market.bid is not none %}${{ '%.2f'|format(d.market.bid) }}{% else %}—{% endif %}</div>
+                    <div class="text-2xl font-mono text-green-400 font-bold">$85210.00</div>
                   </div>
                   
                   <div class="text-center border-t border-slate-800 pt-6">
                     <div class="text-slate-500 uppercase text-xs font-bold mb-1">Último Operado</div>
-                    <div class="text-4xl font-mono text-white font-bold">{% if d.market.price is not none %}${{ '%.2f'|format(d.market.price) }}{% else %}—{% endif %}</div>
+                    <div class="text-4xl font-mono text-white font-bold">$85300.00</div>
                   </div>
                 </div>
 
                 <!-- Columna Derecha: Gráfico Intradiario -->
                 <div class="w-[55%] flex flex-col gap-6">
                   <!-- Gráfico Intradiario -->
-                  <div class="flex-1 bg-slate-900/50 rounded-lg border border-slate-700/50 flex flex-col p-4"
-                       x-data="{ 
-                         chart: null, 
-                         series: null,
-                         async initChart() {
-                           const container = this.$refs.chartContainer;
-                           if (!container || !window.LightweightCharts) return;
-                           
-                           this.chart = window.LightweightCharts.createChart(container, {
-                               layout: {
-                                   background: { type: 'solid', color: 'transparent' },
-                                   textColor: '#94a3b8',
-                               },
-                               grid: {
-                                   vertLines: { color: 'rgba(51, 65, 85, 0.2)' },
-                                   horzLines: { color: 'rgba(51, 65, 85, 0.2)' },
-                               },
-                               timeScale: {
-                                   timeVisible: true,
-                                   borderColor: 'rgba(51, 65, 85, 0.5)'
-                               },
-                               rightPriceScale: {
-                                   borderColor: 'rgba(51, 65, 85, 0.5)'
-                               }
-                           });
-                           
-                           this.series = this.chart.addLineSeries({
-                               color: '#818cf8',
-                               lineWidth: 2,
-                               crosshairMarkerRadius: 4
-                           });
-                           
-                           try {
-                               const resp = await fetch('/bond/{{ d.ticker }}/price-history');
-                               const data = await resp.json();
-                               if (data && data.length > 0) {
-                                   this.series.setData(data);
-                                   this.chart.timeScale().fitContent();
-                               }
-                           } catch (err) {
-                               console.error('Failed to load chart data:', err);
-                           }
-                           
-                           // Resize observer para que el gráfico se ajuste
-                           new ResizeObserver(entries => {
-                             if (entries.length === 0 || entries[0].target !== container) return;
-                             const newRect = entries[0].contentRect;
-                             this.chart.applyOptions({ height: newRect.height, width: newRect.width });
-                           }).observe(container);
-                         }
-                       }"
-                       x-init="initChart()">
-                    <h4 class="text-slate-400 text-sm font-bold mb-2">Histórico (Hasta 3 años)</h4>
-                    <div x-ref="chartContainer" class="flex-1 w-full h-[300px]"></div>
+                  <div class="flex-1 bg-slate-900/50 rounded-lg border border-slate-700/50 flex flex-col p-4">
+                    <h4 class="text-slate-400 text-sm font-bold mb-2">Order Flow: Gráfico Intradiario</h4>
+                    <div class="flex-1 border-2 border-dashed border-slate-700/50 rounded flex items-center justify-center text-slate-500 bg-slate-800/30">
+                      [ Aquí irá el gráfico de Velas / Línea usando Lightweight Charts ]
+                    </div>
                   </div>
                 </div>
              </div>
@@ -275,7 +224,7 @@
           <div class="flex gap-6 h-full">
             <!-- Izquierda: Matriz de Retorno (Horizon Analysis) via HTMX -->
             <div class="w-[60%] bg-slate-900/50 rounded-lg border border-slate-700/50 p-5 flex flex-col relative overflow-hidden min-h-[350px]"
-                 hx-get="/bond/{{ d.ticker }}/horizon-matrix?lag={{ lag }}"
+                 hx-get="/bond/AL30/horizon-matrix?lag=1"
                  hx-trigger="load"
                  hx-swap="innerHTML">
                  
@@ -296,15 +245,15 @@
                 <div class="space-y-4">
                   <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                     <span class="text-xs text-slate-400 uppercase">Modified Duration</span>
-                    <span class="font-mono text-lg text-white">{% if m.duration is not none %}{{ '%.2f'|format(m.duration) }}{% else %}—{% endif %} <span class="text-xs text-slate-500">años</span></span>
+                    <span class="font-mono text-lg text-white">11.47 <span class="text-xs text-slate-500">años</span></span>
                   </div>
                   <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                     <span class="text-xs text-slate-400 uppercase">DV01</span>
-                    <span class="font-mono text-lg text-white">{% if m.convexity is not none %}{{ '%.4f'|format(m.convexity / 100) }}{% else %}—{% endif %} <span class="text-xs text-slate-500">USD</span></span>
+                    <span class="font-mono text-lg text-white">17.1870 <span class="text-xs text-slate-500">USD</span></span>
                   </div>
                   <div class="flex justify-between items-center border-b border-slate-800 pb-2">
                     <span class="text-xs text-slate-400 uppercase">Convexidad</span>
-                    <span class="font-mono text-lg text-white">{% if m.convexity is not none %}{{ '%.2f'|format(m.convexity) }}{% else %}—{% endif %}</span>
+                    <span class="font-mono text-lg text-white">1718.70</span>
                   </div>
                 </div>
               </div>
@@ -405,7 +354,7 @@
                 </div>
               </div>
               <div class="bg-slate-950 p-3 text-xs text-slate-500 text-center border-t border-slate-800">
-                Basado en precio de mercado: <span class="font-mono text-slate-300">${{ '%.2f'|format(d.market.price) if d.market.price else '100' }}</span>
+                Basado en precio de mercado: <span class="font-mono text-slate-300">$85300.00</span>
               </div>
             </div>
           </div>
@@ -429,19 +378,84 @@
       
       // Inyectamos los flujos reales del backend
       baseFlows: [
-        {% for cf in d.cashflows %}
-        {% if cf.date >= d.settle_date %}
+        
+        
+        
+        
         { 
-          date: '{{ cf.date }}', 
-          type: '{{ cf.label }}', 
-          renta: {% if cf.interest is not none %}{{ cf.interest }}{% else %}0.0{% endif %}, 
-          amort: {% if cf.amortization is not none %}{{ cf.amortization }}{% else %}0.0{% endif %} 
-        }{% if not loop.last %},{% endif %}
-        {% endif %}
-        {% endfor %}
+          date: '2027-01-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.24, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2027-07-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.21, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2028-01-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.42, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2028-07-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.35, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2029-01-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.28, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2029-07-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.21, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2030-01-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.14, 
+          amort: 8.0 
+        },
+        
+        
+        
+        { 
+          date: '2030-07-09', 
+          type: 'Renta + Amortización', 
+          renta: 0.07, 
+          amort: 8.0 
+        }
+        
+        
       ], // % cada 100 nominales
       
-      price: {% if d.market.price is not none %}{{ d.market.price }}{% else %}100.00{% endif %}, // USD/ARS cada 100 nominales
+      price: 85300.0, // USD/ARS cada 100 nominales
       
       get nominalsBought() {
         if (!this.price) return 0;

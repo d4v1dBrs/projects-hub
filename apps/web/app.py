@@ -229,93 +229,6 @@ async def _startup_reconcile(app: FastAPI) -> None:
         logger.exception("startup reconcile failed")
 
 
-async def _price_history_loop(app: FastAPI) -> None:
-    """Mantiene el store de cierres diarios (price_history.py) que alimenta las
-    variaciones Sem/1M/3M/YTD/1A de los paneles. Cada iteración acumula el cierre
-    del feed vivo de TODO el universo; en la 1ª corrida además hace el priming
-    profundo de Data912 `/historical/bonds` (soberanos + CER viejos). Read-path
-    100% local → esta task es la única que escribe el store. Diario alcanza."""
-    from datetime import date as _date, timedelta
-    from core.infrastructure.price_history import (
-        byma_prime_candidates, get_price_history_store, prime_from_byma_historico,
-        prime_from_data912, record_live_closes,
-    )
-
-    repo = get_repo()
-    store = get_price_history_store()
-    provider = app.state.provider  # Data912MarketDataProvider (tiene fetch_bond_history)
-    primed = False
-    byma_primed = not settings.byma_history_enabled
-    byma_attempted: set[str] = set()   # tickers ya intentados de BYMA (1× por proceso)
-    while True:
-        try:
-            # El snapshot lo mantiene fresco `_refresh_loop` (cada 5s) + el reconcile
-            # de arranque; leerlo acá evita un refresh_all redundante. Acotamos a los
-            # tickers del catálogo (lo que mostramos) → no inflar el store con
-            # corp/opciones/stocks ajenos. get_all_instruments ya viene expandido a
-            # una especie por ticker (patas ARS/MEP/CABLE incluidas).
-            wanted = {i.ticker for i in repo.get_all_instruments()}
-            snap = {s: r for s, r in app.state.hub.snapshot().items() if s in wanted}
-            n = await asyncio.to_thread(record_live_closes, snap, store, _date.today())
-            if not primed:
-                got = await asyncio.to_thread(prime_from_data912, list(wanted), provider, store)
-                logger.info(
-                    "Price history: +%d cierres acumulados, +%d del histórico Data912.",
-                    n, got)
-                # Solo lo damos por hecho si trajo algo: si Data912 /historical estaba
-                # caído (got=0, sin excepción — es best-effort), reintentamos en el
-                # próximo tick en vez de quedarnos sin la historia profunda.
-                primed = got > 0
-                if primed:
-                    # El JSON crudo del priming ya está en el store: soltarlo libera
-                    # ~37 MB de RSS que quedaban vivos por un TTL que no le sirve a
-                    # nadie (el read-path sale del SQLite, no de este cache).
-                    provider.clear_history_cache()
-            # Completar lo que Data912 no cubre (bopreales, letras, ON, patas MEP/CABLE)
-            # con las series históricas de BYMA open. El bloque Data912 de arriba ya
-            # corrió este tick, así que los tickers que siguen casi sin historia en el
-            # store son justamente los no cubiertos (si Data912 está caído, BYMA cubre
-            # todo — degradado pero correcto). Se intenta cada ticker 1× (byma_attempted):
-            # evita re-primar en bucle los que BYMA no tiene y no cuelga los que fallan
-            # en el mismo lote que un éxito. Listo cuando no queda nada sin intentar.
-            if not byma_primed:
-                pending = byma_prime_candidates(
-                    wanted, store, byma_attempted, settings.byma_history_min_days)
-                if pending:
-                    byma_attempted.update(pending)
-                    gotb = await asyncio.to_thread(
-                        prime_from_byma_historico, pending, store,
-                        max_days=settings.byma_history_max_days,
-                        max_workers=settings.byma_history_workers)
-                    logger.info(
-                        "Price history BYMA: +%d cierres de %d tickers sin cubrir por Data912.",
-                        gotb, len(pending))
-                else:
-                    byma_primed = True   # nada pendiente sin intentar → listo
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            logger.exception("price history loop iteration failed")
-
-        # Backup periódico 1×/día: captura el estado aunque el server lleve días sin
-        # reiniciarse (el backup del lifespan solo corre al arranque).
-        try:
-            from core.infrastructure.db.backup import backup_db
-            bak = await asyncio.to_thread(backup_db, settings.catalog_db,
-                                          settings.backup_dir, keep=settings.backup_keep)
-            if bak:
-                logger.info("catalog backup periódico: %s", bak.name)
-        except Exception:  # noqa: BLE001 — el backup no debe tumbar el loop
-            logger.warning("backup periódico de catalog.db falló", exc_info=True)
-        # Poda del store de precios: el read-path solo mira ~400 días, así que todo lo
-        # anterior era RAM y disco que nadie leía y que crecía sin techo (~54k filas/año).
-        try:
-            cutoff = _date.today() - timedelta(days=settings.price_history_keep_days)
-            await asyncio.to_thread(store.prune, cutoff)
-        except Exception:  # noqa: BLE001 — la poda no debe tumbar el loop
-            logger.warning("poda de price_history falló", exc_info=True)
-        await asyncio.sleep(settings.price_history_sec)
-
 
 
 async def _bei_loop(app: FastAPI) -> None:
@@ -439,7 +352,6 @@ async def lifespan(app: FastAPI):
             for name, fn in (
                 ("refresh", _refresh_loop),
                 ("bei", _bei_loop),
-                ("price_history", _price_history_loop),
             )
         ]
     try:

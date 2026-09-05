@@ -17,7 +17,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse
 
-from apps.web.bond_detail import calculate, cer_projection, get_bond_detail
+from apps.web.bond_detail import calculate, cer_projection, get_bond_detail, get_horizon_matrix
 from apps.web.deps import get_fx, get_indices, get_provider, get_repo, get_state
 from apps.web.templates import TEMPLATES as _TEMPLATES
 from core.infrastructure.rem_provider import REMProvider
@@ -180,3 +180,33 @@ async def cer_drawer_calc(ticker: str, request: Request,
         custom_infl_monthly=custom_infl, custom_monthly=custom_monthly)
     return _render_cer_drawer(request, data, ticker=ticker, lag=lag, price=price,
                               mode=mode, unif=form.get("unif"), raw_inputs=raw_inputs)
+
+
+@router.get("/bond/{ticker}/horizon-matrix", response_class=HTMLResponse)
+def horizon_matrix(ticker: str, request: Request, lag: Lag = 1,
+                   repo=Depends(get_repo), provider=Depends(get_provider),
+                   indices=Depends(get_indices), fx=Depends(get_fx)):
+    """Calcula y devuelve el fragmento HTML con la matriz de análisis de horizonte (Horizon Matrix)."""
+    # Usamos asyncio.to_thread si fuera muy pesado, pero la aproximación de Taylor es O(1) rápido
+    data = get_horizon_matrix(ticker, repo, provider, indices, fx, settlement_lag=lag)
+    if not data:
+        return HTMLResponse("<div class='text-red-400 text-sm p-4'>Instrumento sin datos para análisis.</div>")
+        
+    return _TEMPLATES.TemplateResponse(request, "fragments/horizon_matrix.html", {"data": data})
+
+@router.get("/bond/{ticker}/price-history")
+def price_history(ticker: str, provider=Depends(get_provider)):
+    """Devuelve el historial de precios para Lightweight Charts.
+    Máximo 3 años (1095 días)."""
+    import asyncio
+    import datetime
+    from fastapi.responses import JSONResponse
+    
+    # fetch_historical_prices usa data912/BYMA y no usa SQLite
+    series = provider.fetch_historical_prices(ticker, days=1095)
+    
+    out = []
+    for d, p in sorted(series.items()):
+        out.append({"time": d.isoformat(), "value": p})
+    
+    return JSONResponse(out)

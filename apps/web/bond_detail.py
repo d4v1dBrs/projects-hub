@@ -617,6 +617,83 @@ def calculate(
     return out
 
 
+def get_horizon_matrix(
+    ticker: str, repo, provider, indices, fx,
+    *, settlement_lag: int = 1,
+    tamar_forecast: Optional[float] = None
+) -> Optional[Dict[str, Any]]:
+    """Calcula la matriz de retornos esperados (Horizon Analysis).
+    Evalúa 5 horizontes temporales (meses) x 6 shifts de TIR (bps).
+    Usa aproximación estándar (Taylor expansion) de Carry + Price Effect
+    para velocidad, sin requerir simulaciones completas de índices futuros.
+    """
+    resolved = _resolve_instrument_and_leg(ticker, repo, indices)
+    if resolved is None:
+        return None
+    base_ticker, instrument, indices_eff, leg, ticker_u = resolved
+
+    ref_date = _resolve_ref(settlement_lag)
+    snapshots = provider.fetch_snapshots([base_ticker])
+    snapshot = snapshots.get(base_ticker)
+    if snapshot is None or snapshot.price is None:
+        return None
+    
+    snapshot.instrument = instrument
+    
+    # Base TIR and Risk Metrics
+    base_tir = FinancialEngine.calculate_tir(
+        snapshot, indices_provider=indices_eff, fx_provider=fx,
+        settle_date=ref_date, tamar_forecast=tamar_forecast
+    )
+    if base_tir is None:
+        return None
+        
+    duration = FinancialEngine.calculate_duration(snapshot, base_tir, settle_date=ref_date) or 0.0
+    convexity = FinancialEngine.convexity(instrument, base_tir, ref_date) or 0.0
+
+    months = [1, 3, 6, 9, 12]
+    shifts_bps = [-200, -100, 0, 100, 200, 300]
+    
+    matrix = []
+    
+    for shift in shifts_bps:
+        row = {"shift": shift, "cells": []}
+        shift_pct = shift / 10000.0
+        
+        # Efecto precio aproximado: -MD * dY + 0.5 * Convexity * dY^2
+        price_effect = (-duration * shift_pct) + (0.5 * convexity * (shift_pct ** 2))
+        
+        for m in months:
+            t = m / 12.0
+            carry = base_tir * t
+            
+            # Retorno total = Carry asumiendo TIR constante + Efecto de cambio de TIR
+            # Si el bono vence antes del horizonte, el retorno de precio al vto es siempre 0 (pulveriza la MD).
+            # Para simplificar en esta vista institucional rápida, asumimos la aproximación lineal:
+            total_return = (carry + price_effect) * 100.0
+            
+            # Color HSL (Red a Green): Rango esperado ~ -15% a +15%
+            # hue = 0 (Rojo) a 120 (Verde)
+            hue = min(max((total_return + 10) * 4.8, 0), 120)
+            lightness = 25 + min(abs(total_return), 20)
+            text_color = "white" if hue < 30 or hue > 90 else "#1e293b"
+            
+            row["cells"].append({
+                "month": m,
+                "value": total_return,
+                "style": f"background-color: hsl({hue:.0f}, 80%, {lightness:.0f}%); color: {text_color};"
+            })
+        matrix.append(row)
+        
+    return {
+        "ticker": ticker_u,
+        "base_tir": base_tir,
+        "duration": duration,
+        "months": months,
+        "matrix": matrix
+    }
+
+
 _CER_ANCHOR_HABIL = 10  # el CER se ancla en el 10º día hábil de cada mes (BCRA)
 
 

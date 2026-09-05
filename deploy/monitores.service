@@ -1,0 +1,16 @@
+[Unit]
+Description=Monitor Renta Fija (FastAPI)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/projects-hub
+Environment="PATH=/home/ubuntu/projects-hub/venv/bin"
+# Usamos run.py porque tiene la verificación de Python 3.12 y los logs correctos.
+ExecStart=/home/ubuntu/projects-hub/venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

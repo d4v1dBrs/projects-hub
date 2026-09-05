@@ -18,7 +18,6 @@ import pandas as pd
 from core.domain.models import MarketSnapshot
 from core.domain.interfaces import IMarketDataProvider
 import httpx
-from core.infrastructure.price_history import get_price_history_store
 
 logger = logging.getLogger(__name__)
 
@@ -303,18 +302,39 @@ class Data912MarketDataProvider(IMarketDataProvider):
             cls._stock_history_cache.clear()
 
     def fetch_historical_prices(self, ticker: str, days: int) -> Dict[date, float]:
-        """`{date: close}` mergeando el CSV legacy (piso estático) con el store vivo
-        (price_history.py, que gana en fechas solapadas por ser más fresco/profundo).
-        El read-path es 100% local: el store/priming los mantiene una task de fondo."""
+        """`{date: close}` mergeando el CSV legacy (piso estático) con data viva de las APIs.
+        Ya no hay base local: busca en la API de Data912 y hace fallback a BYMA."""
         t = str(ticker).upper().strip()
         # Mismo alias que fetch_snapshots: el sufijo `_CER` (pata CER de un dual,
         # ej. TXMJ8_CER) cotiza/se acumula bajo el símbolo de mercado (TXMJ8).
         if t.endswith("_CER"):
             t = t[:-4]
+            
         csv_series = self._load_history().get(t, {})
-        store_series = get_price_history_store().get_series(t)
+        store_series = {}
+        
+        # 1. Intentar Data912 (tiene caché de 6hs interno)
+        bars = self.fetch_bond_history(t)
+        if bars:
+            for b in bars:
+                try:
+                    store_series[date.fromisoformat(b["date"])] = float(b["c"])
+                except (KeyError, TypeError, ValueError):
+                    pass
+                    
+        # 2. Si no trajo nada (o muy poco), intentar BYMA open
+        if len(store_series) < 10:
+            try:
+                from core.infrastructure.byma.chart_history import fetch_history
+                # Hacemos fetch a BYMA sin caché interno, pero generate_report.py ya lo cachea 1x/día
+                byma_series = fetch_history(t, max_days=max(days, 400))
+                store_series.update(byma_series)
+            except Exception as e:
+                logger.warning(f"Fallback a BYMA falló para {t}: {e}")
+
         if not csv_series and not store_series:
             return {}
+            
         merged = {**csv_series, **store_series}
         if days <= 0:
             return merged
