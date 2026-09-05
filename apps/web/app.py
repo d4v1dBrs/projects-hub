@@ -240,11 +240,9 @@ async def _price_history_loop(app: FastAPI) -> None:
         byma_prime_candidates, get_price_history_store, prime_from_byma_historico,
         prime_from_data912, record_live_closes,
     )
-    from core.infrastructure.fci_history import get_fci_history_store, record_from_ard
 
     repo = get_repo()
     store = get_price_history_store()
-    fci_store = get_fci_history_store()
     provider = app.state.provider  # Data912MarketDataProvider (tiene fetch_bond_history)
     primed = False
     byma_primed = not settings.byma_history_enabled
@@ -298,16 +296,7 @@ async def _price_history_loop(app: FastAPI) -> None:
             raise
         except Exception:
             logger.exception("price history loop iteration failed")
-        # FCI: acumula el corte diario de ArgentinaDatos (vcp/ccp/patrimonio) para
-        # derivar flujos reales (Δccp×VCP). Independiente del price history (try aparte).
-        try:
-            nf = await asyncio.to_thread(record_from_ard, fci_store, _date.today())
-            if nf:
-                logger.info("FCI history: +%d cortes de fondo acumulados.", nf)
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            logger.exception("fci history accumulation failed")
+
         # Backup periódico 1×/día: captura el estado aunque el server lleve días sin
         # reiniciarse (el backup del lifespan solo corre al arranque).
         try:
@@ -380,7 +369,6 @@ def _crash_reporter(app: FastAPI):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from core.infrastructure.bondterminal_provider import BondTerminalProvider
-    from core.infrastructure.cafci_provider import CAFCIProvider
     from core.infrastructure.fx_provider import DolarAPIProvider
     from core.infrastructure.futures_provider import RofexProvider
     from core.infrastructure.indices_provider import BCRAIndicesProvider
@@ -429,7 +417,6 @@ async def lifespan(app: FastAPI):
     app.state.indices = BCRAIndicesProvider(excel_repo=repo)
     app.state.fx = DolarAPIProvider()
     app.state.rofex = RofexProvider()  # WS Matba lazy (warmup en el 1er get_quotes)
-    app.state.cafci = CAFCIProvider()  # FCI: hidrata de disco / fetch 1×/día
     app.state.bondterminal = BondTerminalProvider()  # riesgo país EMBI AR (TTL 5min)
     # En tests (MONITOR_DISABLE_LOOPS=1) NO arrancamos los loops: corren pricing
     # con indices reales en background y contaminan los caches de módulo
