@@ -11,8 +11,13 @@ import threading
 from datetime import date, timedelta
 from typing import Optional
 
-# Re-export: única fuente de verdad del day-count 30/360.
-from core.domain.cashflow_synth import days_30_360  # noqa: F401
+def days_30_360(start: date, end: date) -> int:
+    """Day-count 30/360 estándar (ISDA). Asume meses de 30 días y año de 360."""
+    d1 = min(start.day, 30)
+    d2 = end.day
+    if d2 == 31 and d1 >= 30:
+        d2 = 30
+    return (end.year - start.year) * 360 + (end.month - start.month) * 30 + (d2 - d1)
 from core.holiday_engine import (  # noqa: F401  (re-export)
     es_habil, is_habil, settlement_byma, settlement_byma_date,
 )

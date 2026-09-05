@@ -15,3 +15,18 @@ def ccy_from_suffix(ticker: str) -> str:
     if t.endswith("C"):
         return "CABLE"
     return "ARS"
+
+
+_USD_TYPES = ("BONAR", "GLOBAL", "BOPREAL")
+_USD_TOKENS = ("HARD DOLLAR", "DOLAR LINKED", "DOLLAR LINKED",
+               "DOLAR_LINKED", "DOLLAR_LINKED")
+
+def _pays_usd(instrument_type: str) -> bool:
+    t = (instrument_type or "").upper().strip()
+    return t in _USD_TYPES or any(tok in t for tok in _USD_TOKENS)
+
+def position_currency(instrument_type: str, ticker: str) -> str:
+    """USD para patas MEP/CABLE de tipos que cotizan en USD; ARS para el resto."""
+    if _pays_usd(instrument_type) and ccy_from_suffix(ticker) in ("MEP", "CABLE"):
+        return "USD"
+    return "ARS"

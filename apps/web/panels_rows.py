@@ -21,7 +21,7 @@ import numpy as np
 from core.domain.currency import ccy_from_suffix
 from core.domain.instrument_groups import PANEL_LIDER
 from core.domain.on_classification import sector_for, sector_meta
-from core.domain.portfolio import position_currency
+from core.domain.currency import position_currency
 from core.domain.services import FinancialEngine
 from core.infrastructure.futures_provider import (
     DEFAULT_SYMBOLS as ROFEX_SYMBOLS,

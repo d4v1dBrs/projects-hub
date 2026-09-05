@@ -24,7 +24,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.domain.models import Instrument, MarketSnapshot
-from core.domain.portfolio import position_currency
+from core.domain.currency import ccy_from_suffix, position_currency
 from core.domain.clock import today as _domain_today
 from core.domain.services import FinancialEngine, _is_cer_type, _cer_reference_date
 from core.holiday_engine import settlement_byma, date_range_habil
@@ -50,15 +50,7 @@ def _safe(v) -> Any:
 
 
 def _is_usd_quoted(instrument: Instrument) -> bool:
-    """¿El precio de esta especie cotiza en USD (no en pesos)?
-
-    DELEGA en `portfolio.position_currency` — la fuente ÚNICA del concepto, la
-    misma que usan cartera, escenarios y la curva. Antes había acá una tercera
-    copia divergente (lista propia de tipos + sufijo `D`) que dejaba en "ARS":
-    toda pata **CABLE** (…C cotiza en dólar cable) y todas las
-    **PROVINCIAL HARD DOLLAR** …D (el tipo no figuraba en la lista). Cualquier
-    ajuste del concepto va en `core/domain/portfolio.py`, no acá.
-    """
+    """¿El precio de esta especie cotiza en USD (no en pesos)?"""
     return position_currency(instrument.instrument_type, instrument.ticker) == "USD"
 
 
