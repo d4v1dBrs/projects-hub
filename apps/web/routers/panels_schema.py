@@ -113,7 +113,8 @@ _BEI_TABLE_KEY = {"bei_tenor": "tenor", "bei_sendero": "sendero"}
 # los del monitor que quedaron sin UI (ON, provinciales, valor relativo, BEI pares) se
 # retiraron del registro en vez de dejarlos alcanzables sólo por URL.
 PANELS = {
-    "bonares": ("BONARES Y GLOBALES", {"BONAR", "GLOBAL"}, _SOBERANO_USD_COLS),
+    "bonares": ("BONARES Y GLOBALES", {"BONAR", "GLOBAL"},
+                [c for c in _BONARES_COLS if c["key"] != "technical_value"]),
     "bopreales": ("BOPREALES", {"BOPREAL"}, _SOBERANO_USD_COLS),
     "cer": ("BONOS CER", {"CER", "LECER", "BONCER", "BONCER ZC", "CON CUPON", "STEP-UP"}, _CER_COLS),
     "tasa_fija": ("TASA FIJA", {"LECAP", "BONCAP", "BONOFIJA"}, _TASA_FIJA_COLS),

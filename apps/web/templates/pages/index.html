@@ -46,7 +46,7 @@
             {# Desplegable: mostrar/ocultar columnas (mismo estilo que el CONFIG global). #}
             <div class="col-menu">
               {% for c in p.columns %}
-              <button type="button" class="cfg-item on" data-col="{{ loop.index }}">{{ c.label }}</button>
+              <button type="button" class="cfg-item on" data-col="{{ loop.index }}" data-key="{{ c.key }}">{{ c.label }}</button>
               {% endfor %}
             </div>
           </span>
@@ -276,13 +276,13 @@
     // toolbar que se registran después (botones muertos con datos refrescando).
     var HIDDEN_PANELS = lsGet("panels-hidden-v1", null);   // [gs-id]
     if (!Array.isArray(HIDDEN_PANELS)) HIDDEN_PANELS = (DL && Array.isArray(DL.hidden)) ? DL.hidden.slice() : [];
-    // v2: el ocultamiento se guarda por ÍNDICE de columna, así que cualquier cambio
-    // en la lista de columnas de un panel (sacar "Sector" de PROVINCIALES) corre los
-    // índices y le oculta al usuario la columna equivocada. Bumpear la clave descarta
-    // la preferencia vieja —una vez— en vez de aplicarla mal. Si mañana cambian otra
-    // vez las columnas: subir a v3 (y limpiar la clave anterior abajo).
-    var HIDDEN_COLS = lsGet("panel-cols-v2", null);        // {gs-id: [colIndex]}
+    // v3 guarda claves estables. Las preferencias v2/default antiguas usan indices
+    // de base 1; Bonares tenia V.Tec e historicos antes de este recorte.
+    var HIDDEN_COLS = lsGet("panel-cols-v3", null);        // {gs-id: [columnKey]}
+    if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = lsGet("panel-cols-v2", null);
     if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = (DL && isObj(DL.cols)) ? JSON.parse(JSON.stringify(DL.cols)) : {};
+    var LEGACY_BONARES_COLS = ["ticker", "vto", "days_next_coupon", "price", "technical_value",
+      "parity", "tir", "duration", "change_pct", "var_7d", "var_30d", "var_90d", "var_ytd", "var_1y", "volume"];
 
     function panelTitle(item) {
       var t = item.querySelector(".ph-title");
@@ -301,12 +301,20 @@
     // Estado persistido: columnas ocultas + paneles ocultos.
     el.querySelectorAll(".grid-stack-item").forEach(function (item) {
       var id = item.getAttribute("gs-id");
-      (Array.isArray(HIDDEN_COLS[id]) ? HIDDEN_COLS[id] : []).forEach(function (n) {
-        item.querySelector(".panel").classList.add("hcol-" + n);
-        var b = item.querySelector('.col-menu .cfg-item[data-col="' + n + '"]');
-        if (b) b.classList.remove("on");
+      var buttons = Array.from(item.querySelectorAll(".col-menu .cfg-item"));
+      var keys = buttons.map(function (b) { return b.dataset.key; });
+      var legacyKeys = id === "bonares" ? LEGACY_BONARES_COLS : keys;
+      var hidden = (Array.isArray(HIDDEN_COLS[id]) ? HIDDEN_COLS[id] : []).map(function (v) {
+        return /^\d+$/.test(String(v)) ? legacyKeys[Number(v) - 1] : v;
+      }).filter(function (key) { return keys.indexOf(key) >= 0; });
+      HIDDEN_COLS[id] = Array.from(new Set(hidden));
+      buttons.forEach(function (b) {
+        if (hidden.indexOf(b.dataset.key) < 0) return;
+        item.querySelector(".panel").classList.add("hcol-" + b.dataset.col);
+        b.classList.remove("on");
       });
     });
+    lsSet("panel-cols-v3", HIDDEN_COLS);
     HIDDEN_PANELS.forEach(function (id) {
       var item = el.querySelector('.grid-stack-item[gs-id="' + id + '"]');
       if (item) hidePanel(item);
@@ -371,10 +379,11 @@
       var n = ci.dataset.col;
       var nowOn = ci.classList.toggle("on");
       panel.classList.toggle("hcol-" + n, !nowOn);
-      var hid = (Array.isArray(HIDDEN_COLS[id]) ? HIDDEN_COLS[id] : []).filter(function (x) { return String(x) !== String(n); });
-      if (!nowOn) hid.push(parseInt(n, 10));
+      var key = ci.dataset.key;
+      var hid = (Array.isArray(HIDDEN_COLS[id]) ? HIDDEN_COLS[id] : []).filter(function (x) { return x !== key; });
+      if (!nowOn) hid.push(key);
       HIDDEN_COLS[id] = hid;
-      lsSet("panel-cols-v2", HIDDEN_COLS);
+      lsSet("panel-cols-v3", HIDDEN_COLS);
     });
 
     // --- CONFIG global (nav): elegir qué paneles ver / restaurar cerrados -- //
@@ -427,6 +436,7 @@
           } else if (action.dataset.action === "reset-default") {
             localStorage.removeItem("grid-layout-v3");
             localStorage.removeItem("panels-hidden-v1");
+            localStorage.removeItem("panel-cols-v3");
             localStorage.removeItem("panel-cols-v2");
             localStorage.removeItem("panel-cols-v1");   // resto de la versión anterior
             location.reload();  // recarga → toma el layout default del server
