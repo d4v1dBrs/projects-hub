@@ -235,7 +235,7 @@ class DualCerTamarStrategy(VanillaStrategy):
     distintas):
 
     - Es la convención que `price_from_tir` YA implementaba y que documenta
-      agents.md para este tipo ("payback / (1+tir)^t"). Elegir la pata real
+      docs/convenciones-financieras.md para este tipo ("payback / (1+tir)^t"). Elegir la pata real
       obligaba a re-derivar el precio deflactando por el CER **proyectado al
       vencimiento**, no por el del settle.
     - Deja la columna "TIR (TEA)" del panel DUAL/TAMAR comparable: los DUAL TAMAR
@@ -302,7 +302,7 @@ class DualCerTamarStrategy(VanillaStrategy):
     def duration(self, inst, tir, ctx: PricingContext):
         """MD bullet con **m=12**, igual que TAMAR PURO/DUAL.
 
-        agents.md › "Bonos TAMAR (PURO, DUAL, DUAL_CER_TAMAR)": *"MD bullet
+        docs/convenciones-financieras.md › "Bonos TAMAR (PURO, DUAL, DUAL_CER_TAMAR)": *"MD bullet
         TAMAR/DUAL usa m=12 (capitalización mensual) → MD = years/(1+TEA)^(1/12).
         DL usa m=1"* — la excepción m=1 es Dólar Linked, no este tipo. Antes acá
         había un m=1 heredado de cuando la TIR era una tasa REAL de BONCER ZC;

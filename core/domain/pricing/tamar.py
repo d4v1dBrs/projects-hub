@@ -27,7 +27,7 @@ CUATRO pasos, en este orden, y cada uno mueve la paridad del panel:
      que va con `cer_settle_lag=None` (sin escalón).
 
   2. LAG CER 10 HÁB.    `cer_reference_date(<paso 1>, instrument.cer_lag)`
-     NT8/2024 (`agents.md` › "Bonos CER"): el CER que indexa un pago de fecha D
+     NT8/2024 (`docs/convenciones-financieras.md` › "Bonos CER"): el CER que indexa un pago de fecha D
      es el de `cer_lag` días hábiles BYMA ANTES de D. Corre en los DOS caminos
      (V.Téc y payoff proyectado). Sin él, el riel CER se sobrestima ~0,9% con CER
      a 2%/mes (14-15 días corridos de indexación de más).
@@ -38,7 +38,7 @@ CUATRO pasos, en este orden, y cada uno mueve la paridad del panel:
      TIR saliera idéntica con spread 0.00 y 0.04.
 
   4. MAX DE RIELES      `max(payoff_tamar, payoff_cer)`
-     agents.md › "Bonos TAMAR": *"Payoff a vto = max(rail_TAMAR, CER_ratio ×
+     docs/convenciones-financieras.md › "Bonos TAMAR": *"Payoff a vto = max(rail_TAMAR, CER_ratio ×
      (1+cer_spread)^years)"*. Vale también para el V.Téc devengado al settle.
 
 Es decir: **settlement T+N → lag CER 10 hábiles → spread → max de rieles**.
@@ -201,7 +201,7 @@ def tamar_dual_payoff_at(
         #      liquidación (misma convención que `pricing/base.py` para todo CER).
         #      El payoff a vencimiento pasa `cer_settle_lag=None`: `end` ya es la
         #      fecha de pago y un T+1 de más adelantaría la indexación un día.
-        #   2. LAG DE 10 DÍAS HÁBILES BYMA (NT8/2024, `agents.md` › "Bonos CER"):
+        #   2. LAG DE 10 DÍAS HÁBILES BYMA (NT8/2024, `docs/convenciones-financieras.md` › "Bonos CER"):
         #      el CER que indexa un pago de fecha D es el de `cer_lag` hábiles
         #      ANTES. Vale para los DOS caminos. Sin el lag el riel CER se
         #      sobrestima ~0,9% con CER a 2%/mes (14-15 días corridos de más) y el

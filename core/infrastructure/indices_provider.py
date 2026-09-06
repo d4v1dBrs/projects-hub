@@ -189,7 +189,7 @@ class BCRAIndicesProvider:
 
     def _fetch_all(self):
         # I/O de red FUERA del lock (misma forma que `prefetch()`; regla de
-        # agents.md §BEI). El lock es de CLASE y `prefetch()` lo toma de forma
+        # docs/convenciones-financieras.md §BEI). El lock es de CLASE y `prefetch()` lo toma de forma
         # bloqueante desde el hilo del event loop: retenerlo a través de los 4
         # httpx.get (10s c/u) congelaba la app entera hasta que BCRA respondiera.
         with self._lock:
