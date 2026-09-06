@@ -1,18 +1,16 @@
-"""App FastAPI + HTMX — dashboard del monitor (reemplaza el http.server + SPA).
+"""App FastAPI: web personal (`/`, `/projects`) + terminal de bonos (`/bonos`, HTMX SSR).
 
-`run.py` la levanta vía uvicorn (es la app primaria). Integra:
+`run.py` la levanta vía uvicorn. Integra:
   - CatalogRepository (SQLite) vía Depends(get_repo).
   - Motor financiero (pricing core Strategy/Protocol) vía GenerateMonitorReport.
   - Puente CPU: `await asyncio.to_thread(use_case.execute, ...)` corre el pricing
     pesado fuera del event loop; `_bei_loop` hace lo mismo con compute_bei_tables.
-  - lifespan + asyncio.create_task reemplazan los daemon threads + _SHUTDOWN_EVENT
-    del http.server (shutdown explícito al cancelar las tasks).
-  - ResilientClient + ProviderHub (async) en app.state, listos para cuando los
-    providers migren a async (hoy corren sync vía to_thread).
+  - lifespan: 2 loops supervisados (`refresh` 5s, `bei` 300s) + `_startup_reconcile`
+    (1×) — ver `supervisor.py`.
+  - ResilientClient + ProviderHub (async) en app.state: fuente live + piso Data912.
 
 Routers en apps/web/routers/, templates Jinja+HTMX en apps/web/templates/.
-Bajo pytest (MONITOR_DISABLE_LOOPS=1) los loops no arrancan (aíslan el cache de
-módulo del avg TAMAR del test de equivalencia).
+Con MONITOR_DISABLE_LOOPS=1 los loops no arrancan (smoke tests / import limpio).
 """
 
 from __future__ import annotations
@@ -34,13 +32,9 @@ from apps.web.deps_auth import (
     RequireTabPermission, RequiresLoginException, TabForbiddenException,
     get_current_user, get_current_user_html,
 )
-from apps.web.routers import auth as auth_router, users_abm
-
-
 from apps.web.deps import get_bondterminal, get_repo, get_state
 from apps.web.routers import (
-    abm, bonds, header,
-    panels, source, stream, personal, users_abm
+    abm, auth as auth_router, bonds, header, panels, personal, stream, users_abm,
 )
 from apps.web.state import AppState
 from apps.web.supervisor import supervise
@@ -60,13 +54,11 @@ _ALL_TYPES = [*SOBERANOS, *BOPREALES, *TASA_FIJA, *CER, *DOLAR_LINKED, *TAMAR,
 
 
 async def _refresh_loop(app: FastAPI) -> None:
-    """Ingesta async (§6.3-6.5): `hub.refresh_all()` trae Data912 (5 endpoints en
-    paralelo, httpx + circuit breaker + pool) y el motor de pricing corre off-loop
-    vía `to_thread` leyendo el snapshot ya materializado por el hub.
-
-    La chain de opciones (parser + CRR + griegos, ~5-20s) NO va acá: vive en su
-    propio `_options_loop` para no espaciar el push SSE de los paneles de bonos —
-    el pricing es ~0.1-0.3s, las opciones dominaban el ciclo y lo llevaban a ~25s."""
+    """Ingesta async: `hub.refresh_all()` trae la fuente activa (BYMA open por default,
+    endpoints en paralelo, httpx + circuit breaker + pool) y le mergea el piso Data912;
+    el motor de pricing corre off-loop vía `to_thread` leyendo el snapshot ya
+    materializado. El pricing tarda ~0.1-0.3s por ciclo; el BEI (más pesado) va en
+    `_bei_loop` para no espaciar el push SSE de los paneles."""
     from core.infrastructure.provider_hub import HubMarketDataProvider
     from core.use_cases.generate_report import GenerateMonitorReport
 
@@ -342,7 +334,7 @@ async def lifespan(app: FastAPI):
     if not os.environ.get("MONITOR_DISABLE_LOOPS"):
         _on_crash = _crash_reporter(app)
         # `_startup_reconcile` NO se supervisa: corre una vez y terminar es su contrato.
-        # Los otros cinco son `while True` — si terminan, es una caída (ver supervisor.py).
+        # Los otros dos son `while True` — si terminan, es una caída (ver supervisor.py).
         tasks = [asyncio.create_task(_startup_reconcile(app))]
         tasks += [
             asyncio.create_task(
@@ -442,7 +434,7 @@ async def tab_forbidden_exception_handler(request: Request, exc: TabForbiddenExc
         'seguís logueado.</p>'
         + (f'<p>Podés ir a: {links}</p>' if links
            else '<p>No tenés ningún módulo habilitado — pedile acceso al administrador.</p>')
-        + '<p><a href="/logout">Cerrar sesión</a></p></div>',
+        + '<form method="post" action="/logout"><button type="submit">Cerrar sesión</button></form></div>',
         status_code=403)
 
 
@@ -460,7 +452,6 @@ app.include_router(abm.router, dependencies=[Depends(RequireTabPermission("abm")
 
 # Parciales globales de HTMX
 app.include_router(header.router)
-app.include_router(source.router)
 app.include_router(stream.router)
 
 
@@ -473,7 +464,7 @@ def health(repo=Depends(get_repo), state=Depends(get_state)):
     st = state.status()
     return {
         # `status` habla de los PRECIOS (el refresh loop). La caída de un loop
-        # lateral (ratings/bei/price_history/options) NO lo degrada —eso sería
+        # lateral (bei) NO lo degrada —eso sería
         # gritar 'sin datos' con el snapshot fresco de hace 5s— pero se reporta
         # aparte en `degraded_loops` para que ops la vea. Sólo NOMBRES: el motivo
         # es el string crudo de una excepción y este endpoint es público.

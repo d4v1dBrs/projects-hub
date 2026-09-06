@@ -21,8 +21,8 @@ _LOOP_CRASH_RE = re.compile(r"^loop (\S+) cayó \((.*)\)")
 
 # Loops cuya caída es CRÍTICA: apagan el semáforo (badge rojo "sin datos" +
 # /api/health degradado) porque sin ellos la app no tiene qué mostrar. Sólo el
-# refresh loop produce el snapshot que sirven los paneles; ratings/bei/options/
-# price_history alimentan funciones LATERALES y su caída es una degradación
+# refresh loop produce el snapshot que sirven los paneles; el loop `bei` alimenta
+# funciones LATERALES (paneles BEI, drawer CER) y su caída es una degradación
 # PARCIAL: queda en `loop_crashes`/`degraded_loops` (y en el log), pero no pinta de
 # rojo un panel de precios que está perfecto. Antes, con la retención de 300s, que
 # se cayera el scraper de calificaciones dejaba el header en "sin datos" 5 minutos.
@@ -79,8 +79,6 @@ class AppState:
         self._loop_crashes: Dict[str, tuple] = {}
         self._crash_sticky_s = float(crash_sticky_s)
         self._bei: Optional[dict] = None  # tablas crudas de compute_bei_tables
-        self._options: list = []          # list[OptionItem] del último refresh (vacío hasta que arme)
-        self._options_by_ticker: Dict[str, object] = {}
         # Fuente de datos activa (mode/label/delayed) — la setea el lifespan y el
         # endpoint de switch; el header la muestra.
         self._data_source: Dict[str, object] = {"mode": "", "label": "", "delayed": False}
@@ -302,21 +300,3 @@ class AppState:
 
     def data_source(self) -> Dict[str, object]:
         return dict(self._data_source)
-
-    def set_options(self, items: list) -> None:
-        """Setea la chain enriquecida de opciones (escrita por el refresh loop).
-
-        Construye el índice ANTES de publicar las referencias: los lectores
-        (option()/options(), que corren en el thread pool de FastAPI) ven siempre
-        un dict completo y coherente, nunca uno a medio llenar."""
-        items = items or []
-        by_ticker = {it.ticker: it for it in items}
-        self._options = items
-        self._options_by_ticker = by_ticker
-
-    def options(self) -> list:
-        return self._options
-
-    def option(self, ticker: str):
-        """Devuelve el OptionItem del ticker dado o None."""
-        return self._options_by_ticker.get(ticker.upper())

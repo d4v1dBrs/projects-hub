@@ -43,9 +43,5 @@ def get_rofex(request: Request):
     return request.app.state.rofex
 
 
-def get_cafci(request: Request):
-    return request.app.state.cafci
-
-
 def get_bondterminal(request: Request):
     return request.app.state.bondterminal

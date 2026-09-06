@@ -5,25 +5,15 @@ __pycache__/
 .venv/
 venv/
 .mypy_cache/
-.pytest_cache/
 .ruff_cache/
-.hypothesis/          # base de ejemplos de property-based testing (regenerable)
 
-# Logs
+# Logs (el log de la app va a db_dir, fuera del árbol; esto cubre restos y rotados)
 *.log
-# Rotados de logrotate/systemd: `*.log` NO los matchea (terminan en .1, .2, ...).
-# Sin esto quedan como untracked en la raiz y ensucian el arbol en cada git pull.
 *.log.[0-9]
 *.log.[0-9].gz
 
-# Generated artifacts (PNG outputs, caches)
-data/monitor_*.png
+# Artefactos generados
 data/feriados_ar_cache.json
-apps/cli/*.png
-apps/cli/*.json
-# PDF del panel ON: lo genera scripts/export_on_pdf.py en la raíz, es salida derivada
-# (y pesa; la raíz está sincronizada por OneDrive).
-Obligaciones_Negociables_*.pdf
 
 # OS / IDE
 .DS_Store
@@ -35,28 +25,21 @@ Thumbs.db
 *.bak
 *.bak[0-9]
 
-# Material de referencia BYMA (addin Excel, PDFs, scripts de auditoría) — 9.6 MB,
-# fuente del pipeline que genera data/byma/titulos_final.csv; no se versiona.
+# Material de referencia BYMA (addin Excel, PDFs) — fuente local de data/byma/titulos_final.csv
 BYMADATA_EXCEL/
 
 # Artefactos de Playwright MCP (snapshots/console de pruebas de UI)
 .playwright-mcp/
 
-# Scratch
+# Scratch local (mockups, dumps, pruebas a mano): nunca se versiona
 scratch/
 
-# Bases de datos (reingeniería) — viven en %LOCALAPPDATA%\monitor, nunca en el repo.
+# Bases de datos — viven en db_dir (%LOCALAPPDATA%\monitor / ~/.local/share/monitor), nunca en el repo
 *.db
 *.duckdb
 *.db-wal
 *.db-shm
 monitor/
-
-# Baseline de regresión (artefacto local de Fase 0)
-baseline_tests.txt
-
-# Datos de runtime del usuario (tenencias de la cartera)
-data/cartera.json
 
 # Secrets / credentials (NEVER commit)
 .env
@@ -65,11 +48,9 @@ data/cartera.json
 secrets/
 *.secret
 
-# Claude Code: estado local (settings.local, etc.) — no se trackea
+# Claude Code: estado local
 .claude/
 
-# Worktrees de Superpowers: NUNCA project-local (OneDrive). Ver "Flujo Superpowers"
-# en CLAUDE.md — usar la tool nativa o el path global ~/.config/superpowers/worktrees/.
+# Worktrees: nunca project-local (OneDrive)
 .worktrees/
 worktrees/
-

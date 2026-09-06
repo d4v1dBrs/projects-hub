@@ -6,13 +6,8 @@ lo bueno: si todo falla, preserva el último snapshot bueno (no wipea el cache).
 La fuente se cambia en runtime con `set_source()` (hot-swap sin reiniciar los loops:
 `HubMarketDataProvider` lee `snapshot()` en vivo cada ciclo).
 
-Las opciones se traen del panel BYMA open `/options` por defecto (`fetch_options`,
-con OI real + underlyingSymbol/optionType/maturityDate autoritativos; Data912 de
-fallback) a un snapshot aparte que consume la chain — independiente de la fuente
-live activa. Los subyacentes salen del feed live del hub.
-
-BCRA / DolarAPI / ArgentinaDatos / CAFCI se integran al hub junto con la
-reescritura async de esos providers (Fase 4).
+BCRA / DolarAPI corren aparte (`prefetch()` async desde el refresh loop de app.py);
+el hub sólo coordina las cotizaciones: fuente activa + piso Data912 (`_apply_floor`).
 """
 
 from __future__ import annotations
@@ -29,8 +24,7 @@ from core.domain.models import MarketSnapshot
 from core.infrastructure.async_http import ResilientClient
 from core.infrastructure.byma.field_map import SETTLE_24, SETTLE_CI
 from core.infrastructure.byma.sources import Data912Source, MarketSource
-from core.infrastructure.circuit_breaker import CircuitOpenError
-from core.infrastructure.schemas import Data912Row, parse_snapshot_rows
+from core.infrastructure.schemas import Data912Row
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +54,6 @@ def _with_depth_of(base: Data912Row, live: Optional[Data912Row]) -> Data912Row:
 
 
 class ProviderHub:
-    # Opciones Data912 (fallback de BYMA /options). Incluye `stocks` para tener el
-    # subyacente consistente con las opciones cuando se usa este camino.
-    OPTIONS_ENDPOINTS = {
-        "options": "https://data912.com/live/arg_options",
-        "stocks": "https://data912.com/live/arg_stocks",
-    }
-
     # Floor Data912: cada cuántos segundos se refresca el snapshot Data912 que rellena
     # los símbolos que la fuente activa (BYMA) no lista. TTL para no duplicar la carga
     # (BYMA va cada ciclo ~5s; el cierre que aporta el floor casi no cambia intradía).
@@ -77,8 +64,6 @@ class ProviderHub:
         # Snapshot por plazo (stale-safe): {"24": {sym:row}, "CI": {sym:row}}.
         self._snap: Dict[str, Dict[str, Data912Row]] = {SETTLE_24: {}, SETTLE_CI: {}}
         self._source: Dict[str, str] = {}           # symbol → bucket (bonds/notes/corp/stocks/cedears)
-        self._opt_snapshot: Dict[str, Data912Row] = {}
-        self._opt_source: Dict[str, str] = {}
         # Lock de hilos: el snapshot lo MUTA el event loop (refresh_all) y lo LEE
         # el thread pool (use_case.execute vía to_thread → snapshot()). Sin esto,
         # dict(self._snapshot) puede pegar "dictionary changed size during iteration".
@@ -276,101 +261,6 @@ class ProviderHub:
             if source:
                 self._source.update(source)
             return dict(self._snap[SETTLE_24])
-
-    # ---------------- opciones (BYMA open por defecto, Data912 fallback) ------
-    # Snapshot aparte (`_opt_snapshot`/`_opt_source`), independiente de la fuente
-    # live activa de los paneles. BYMA da OI real + underlyingSymbol/optionType/
-    # maturityDate autoritativos (roots-independiente → más profundidad); Data912
-    # queda de fallback. Los subyacentes (spots) salen del feed live del hub.
-    BYMA_OPTIONS_URL = (
-        "https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/options")
-    _BYMA_OPT_HEADERS = {
-        "User-Agent": "Mozilla/5.0", "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-
-    async def fetch_options(self, source: str = "byma") -> "tuple[Dict[str, Data912Row], Dict[str, Data912Row]]":
-        """Devuelve `(options_rows, stocks_rows)` para `build_options`.
-
-        `source='byma'` usa el panel BYMA open `/options` (sin token) y toma los
-        subyacentes del snapshot live del hub; cae a Data912 si BYMA no trae nada
-        o si todavía no hay stocks live. `source='data912'` fuerza el camino previo."""
-        if source == "byma":
-            await self._fetch_options_byma()
-            snap, src = self.options_snapshot(), self.options_sources()
-            opt = {s: r for s, r in snap.items() if src.get(s) == "options"}
-            stk = {s: r for s, r in self.snapshot().items()
-                   if self.sources().get(s) == "stocks"}
-            if opt and stk:
-                return opt, stk
-            logger.info("opciones BYMA sin datos/subyacentes; fallback a Data912.")
-        await self.fetch_options_data912()
-        snap, src = self.options_snapshot(), self.options_sources()
-        return ({s: r for s, r in snap.items() if src.get(s) == "options"},
-                {s: r for s, r in snap.items() if src.get(s) == "stocks"})
-
-    async def _fetch_options_byma(self) -> Dict[str, Data912Row]:
-        """Trae el panel BYMA open `/options` → mergea en `_opt_snapshot` las filas
-        que son opciones reales (traen `underlyingSymbol`). Stale-safe (acumula).
-        Devuelve lo traído ESTE ciclo (puede ser {} ante fallo transitorio)."""
-        from core.infrastructure.byma.field_map import byma_row_to_quote
-        try:
-            resp = await self._client.post_json(
-                self.BYMA_OPTIONS_URL, json={}, headers=self._BYMA_OPT_HEADERS,
-                source="BYMAopen/options")
-        except CircuitOpenError:
-            return {}
-        except asyncio.CancelledError:
-            raise
-        except Exception as e:  # noqa: BLE001 — la fuente caída no tumba el ciclo
-            logger.warning("BYMAopen/options fetch failed: %s: %s", type(e).__name__, e)
-            return {}
-        rows = resp.get("data") if isinstance(resp, dict) else resp
-        merged: Dict[str, Data912Row] = {}
-        for raw in (rows if isinstance(rows, list) else []):
-            q = byma_row_to_quote(raw)
-            if q is not None and q.opt_underlying:   # opción real (no acción/total)
-                merged[q.symbol] = q
-        with self._lock:
-            if merged:
-                self._opt_snapshot.update(merged)
-                for s in merged:
-                    self._opt_source[s] = "options"
-        return merged
-
-    async def fetch_options_data912(self) -> Dict[str, Data912Row]:
-        async def _one(name: str, url: str):
-            try:
-                payload = await self._client.get_json(url, source=f"Data912/{name}")
-                return name, parse_snapshot_rows(payload if isinstance(payload, list) else [])
-            except CircuitOpenError:
-                return name, {}
-            except asyncio.CancelledError:
-                raise
-            except Exception as e:  # noqa: BLE001
-                logger.warning("Data912/%s fetch failed: %s: %s", name, type(e).__name__, e)
-                return name, {}
-
-        results = await asyncio.gather(*[_one(n, u) for n, u in self.OPTIONS_ENDPOINTS.items()])
-        merged: Dict[str, Data912Row] = {}
-        source: Dict[str, str] = {}
-        for name, rows in results:
-            for sym in rows:
-                source[sym] = name
-            merged.update(rows)
-        with self._lock:
-            if merged:
-                self._opt_snapshot.update(merged)
-                self._opt_source.update(source)
-            return dict(self._opt_snapshot)
-
-    def options_snapshot(self) -> Dict[str, Data912Row]:
-        with self._lock:
-            return dict(self._opt_snapshot)
-
-    def options_sources(self) -> Dict[str, str]:
-        with self._lock:
-            return dict(self._opt_source)
 
     # ---------------- accessors ----------------
     def sources(self) -> Dict[str, str]:

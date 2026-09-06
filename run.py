@@ -1,55 +1,32 @@
-"""Entry point: arranca el dashboard web FastAPI + HTMX vía uvicorn.
+"""Entry point: levanta la app FastAPI (`apps.web.app`) con uvicorn.
 
-(Cutover de la reingeniería: reemplaza el http.server + SPA por apps.web.app.
-El server viejo queda en el historial de git / branch master.)
+Es el `ExecStart` del servicio systemd en producción (deploy/monitores.service:
+`venv/bin/python run.py`) y el comando de desarrollo local: `py -3.12 run.py`.
+El reinicio ante caídas lo hace systemd (`Restart=always`): acá no hay wrapper.
 """
 
 import sys
 
-# --- Guard de versión de Python -------------------------------------------- #
-# Pinneado a Python 3.12 (ver requirements.txt). El runtime es el Python de
-# Programs: `py -3.12`, o %LOCALAPPDATA%\Programs\Python\Python312\python.exe
-# (el "Store Python" ya no existe). Arrancá con run.bat, que lo resuelve solo.
+# Pinneado a Python 3.12 (ver requirements.txt). deploy.sh valida lo mismo al crear
+# el venv; este guard es la segunda red para un arranque a mano con otro intérprete.
 if sys.version_info[:2] != (3, 12):
     raise SystemExit(
-        f"[Monitor] Requiere Python 3.12.x — estás usando {sys.version.split()[0]}.\n"
-        "Arrancá con run.bat (usa el intérprete correcto automáticamente)."
+        f"[Web] Requiere Python 3.12.x — estás usando {sys.version.split()[0]}.\n"
+        "Local: `py -3.12 run.py`. Servidor: `venv/bin/python run.py`."
     )
 
-import logging
-import time
-
-from config.settings import settings, setup_logging
+from config.settings import settings, setup_logging  # noqa: E402
 
 setup_logging()
-logger = logging.getLogger(__name__)
 
 
-def run_web_supervised() -> None:
-    """Levanta uvicorn; reinicia si cae inesperadamente. Ctrl+C sale limpio."""
+def main() -> None:
     import uvicorn
 
-    attempt = 0
-    while True:
-        attempt += 1
-        try:
-            # log_config=None → uvicorn no pisa nuestro setup_logging.
-            uvicorn.run("apps.web.app:app", host=settings.host, port=settings.port,
-                        log_config=None)
-            logger.info("Web server stopped cleanly.")
-            return
-        except KeyboardInterrupt:
-            logger.info("Ctrl+C received — exiting.")
-            return
-        except Exception:
-            logger.exception(f"uvicorn crashed (attempt {attempt}). Restarting in 5s...")
-            time.sleep(5)
+    # log_config=None → uvicorn no pisa nuestro setup_logging.
+    uvicorn.run("apps.web.app:app", host=settings.host, port=settings.port, log_config=None)
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("  MONITOR WEB — FastAPI + HTMX")
-    print(f"  http://localhost:{settings.port}")
-    print("  (Auto-restart si crashea. Ctrl+C para detener.)")
-    print("=" * 60)
-    run_web_supervised()
+    print(f"  Web personal + terminal de bonos → http://localhost:{settings.port}")
+    main()

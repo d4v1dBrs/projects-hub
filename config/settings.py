@@ -4,10 +4,8 @@
 runtime. Agrega los paths de las bases `.db` **fuera del working tree de git** (la
 `catalog.db` es la fuente de verdad: no debe vivir donde corre `git pull`/`git clean`).
 
-Las constantes legacy (`BASE_DIR`, `DATA_DIR`, `MASTER_XLSX`) y `setup_logging()`
-se conservan: las primeras como alias derivados de `settings` para no romper los
-imports existentes mientras las fases migran a `settings.*`; el logging porque ya
-mantiene el árbol liviano (RotatingFileHandler 5 MB).
+`setup_logging()` vive acá porque todo entrypoint importa `settings` primero: consola
+sólo con lo accionable + archivo rotativo (WARNING+) en `db_dir`, fuera del árbol.
 """
 
 from __future__ import annotations
@@ -90,9 +88,6 @@ _DB_DERIVED: dict[str, str] = {
     "catalog_db": "catalog.db",
     "backup_dir": "backups",
     "history_state_dir": "history",
-    "fci_history_db": "fci_history.db",
-    "ratings_history_db": "ratings_history.db",
-    "index_history_db": "index_history.db",
 }
 
 
@@ -163,16 +158,6 @@ class Settings(BaseSettings):
     # history_dir la primera vez y a partir de ahi acumula solo aca. → db_dir/history
     history_state_dir: Path | None = None
     backup_keep: int = 7
-    # Histórico FCI (vcp/ccp/patrimonio por fondo) p/ flujos reales (Δccp×VCP). Se
-    # auto-mantiene acumulando el corte diario de ArgentinaDatos — ver fci_history.py.
-    fci_history_db: Path | None = None
-    # Historial de calificaciones FIX SCR (snapshot diario + cambios up/down/watch) p/ el
-    # badge de 7 días del panel ON. Lo acumula el loop diario — ver ratings_history.py.
-    ratings_history_db: Path | None = None
-    # Cierres diarios de índices BYMA p/ la franja de 5 ruedas del catálogo. M/G se
-    # backfillean del chart; los 16 acumulan el cierre de /index-price — ver index_history.py.
-    index_history_db: Path | None = None
-    index_ruedas: int = 5               # ventana del sparkline de índices (ruedas)
     # Guard "nada de .db dentro del proyecto": por default DENUNCIA (ERROR al boot,
     # ver `_check_db_paths`) pero deja arrancar, porque un droplet desplegado antes
     # de este cambio ya tiene la base viva adentro del árbol y abortar lo dejaría
@@ -180,13 +165,10 @@ class Settings(BaseSettings):
     db_in_tree_fatal: bool = False
 
     # Fuente de cotizaciones live (hot-path). Default BYMA open (público, ~20min
-    # demora); el usuario puede pasar a 'byma_realtime' (clave .env) o 'data912'
-    # (fallback) en runtime desde la UI. Override por env MONITOR_MARKET_SOURCE.
+    # demora); alternativas 'byma_realtime' (BYMADATA_USER/PASS en .env) y 'data912'
+    # (que además es SIEMPRE el piso del merge). Se elige por env MONITOR_MARKET_SOURCE
+    # + restart: el selector de la UI se quitó en este fork.
     market_source: str = "byma_open"  # 'byma_open' | 'byma_realtime' | 'data912'
-    # Fuente de la chain de opciones. 'byma' = panel open /options (OI real +
-    # underlyingSymbol/optionType/maturityDate autoritativos, roots-independiente
-    # → más profundidad); 'data912' = endpoint arg_options (fallback automático).
-    options_source: str = "byma"      # 'byma' | 'data912'
     # Catálogo BYMA (symbol→ISIN/emisor/tipo) para enriquecer la base de títulos.
     byma_catalog_csv: Path = _BASE_DIR / "data" / "byma" / "titulos_final.csv"
     # Client OAuth del addin BYMA. NO es un secreto del usuario: está embebido en el
@@ -230,28 +212,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     refresh_sec: int = 5
-    # Chain de opciones (parser + CRR + griegos de ~1000 contratos): ~5-20s según CPU
-    # y cantidad. Fuera del refresh loop de precios (loop propio) para no espaciar el
-    # push SSE de los paneles de bonos — nadie necesita los griegos cada 5s. Es CPU
-    # puro (mantiene el GIL en `to_thread`), así que mientras corre ralentiza los
-    # ciclos de precios; espaciarlo a 60s achica esa ventana de interferencia.
-    options_refresh_sec: int = 60
-    # Workers del thread pool del motor de pricing (por ciclo). El trabajo es
-    # mayormente CPU (XIRR/root-finding) con algo de I/O cacheado; con el GIL, más
-    # threads que cores rinde poco y en laptops chicas genera thrashing. Acotado a los
-    # cores disponibles (antes era un 20 fijo). Override por MONITOR_ENGINE_WORKERS.
-    engine_workers: int = min(8, (os.cpu_count() or 4))
     bei_refresh_sec: int = 300
-    # Priming complementario vía series históricas de BYMA open para los tickers que
-    # Data912 /historical NO cubre (bopreales, letras, ON, patas MEP/CABLE). Corre 1×.
-    byma_history_enabled: bool = True
-    byma_history_max_days: int = 400    # ~13 meses: cubre 1A (365d) + tolerancia
-    byma_history_min_days: int = 20     # < N ruedas en el store → primar de BYMA
-    byma_history_workers: int = 4       # concurrencia (cortés con BYMA open)
-    # Fuente del backfill BYMA: 'chart' (endpoint chart OHLCV, 1 llamada/ticker,
-    # rango largo, cubre patas D/C y letras) o 'series' (POST seriesHistoricas,
-    # solo cierre, paginado 25d). Chart es estrictamente mejor (verificado en vivo).
-    byma_history_source: str = "chart"  # 'chart' | 'series'
 
     def model_post_init(self, __context: Any) -> None:
         # 1. Resolver db_dir y todo lo que cuelga de él (un override por campo —
@@ -267,9 +228,7 @@ class Settings(BaseSettings):
         #    los crean sus escritores, pero las .db se abren con sqlite3.connect()
         #    directo: sin el padre creado, seguir la receta de CLAUDE.md (paths por
         #    campo fuera del árbol) revienta con "unable to open database file".
-        for d in (self.db_dir, self.catalog_db.parent,
-                  self.fci_history_db.parent, self.ratings_history_db.parent,
-                  self.index_history_db.parent):
+        for d in (self.db_dir, self.catalog_db.parent):
             try:
                 d.mkdir(parents=True, exist_ok=True)
             except OSError as exc:
@@ -286,7 +245,7 @@ class Settings(BaseSettings):
         viven SOLO ahí, igual que las cuentas de usuario y los históricos que se
         acumulan rueda a rueda y no se backfillean). Adentro del árbol, un
         `git clean -xfd` para destrabar un `git pull` conflictivo —o un re-clone—
-        se lleva catalog.db + backups/ + jwt_secret + los 4 históricos de un saque.
+        se lleva catalog.db + backups/ + jwt_secret + el histórico de índices de un saque.
         """
         offenders = [p for p in (self.db_dir, *(getattr(self, f) for f in _DB_DERIVED))
                      if _inside(p, self.base_dir)]
@@ -312,10 +271,10 @@ def apply_timezone() -> None:
     """Fija la zona horaria del proceso a `settings.timezone`.
 
     Se llama al importar este módulo a propósito: TODO entry point (run.py, uvicorn
-    importando `apps.web.app`, los scripts de `scripts/`, pytest) importa `settings`
-    antes de tocar una fecha, y `datetime.now()`/`date.today()` leen la TZ del proceso
-    vía libc. Hacerlo sólo en run.py dejaría afuera a los scripts y al arranque directo
-    por uvicorn — que es justamente como corre el droplet.
+    importando `apps.web.app`, scripts/init_admin.py) importa `settings` antes de
+    tocar una fecha, y `datetime.now()`/`date.today()` leen la TZ del proceso vía
+    libc. Hacerlo sólo en run.py dejaría afuera al script y al arranque directo por
+    uvicorn.
 
     **No-op en Windows**, y NO por comodidad: el CRT de MSVC sólo entiende el formato
     POSIX (`ART3`), no un nombre IANA, y ante un `TZ` que no puede parsear se planta en
@@ -339,7 +298,9 @@ apply_timezone()
 # --------------------------------------------------------------------------- #
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-_LOG_FILE = str(settings.base_dir / "monitores_global.log")
+# FUERA del working tree (mismo criterio que las .db): en prod el árbol es donde corre
+# `git pull`, y en dev la raíz está sincronizada por OneDrive (cada write disparaba sync).
+_LOG_FILE = str(settings.db_dir / "monitores_global.log")
 
 
 class _ConsoleFilter(logging.Filter):
@@ -376,7 +337,7 @@ def setup_logging():
     # ARCHIVO: solo WARNING+ — registro durable de PROBLEMAS (errores de conexión,
     # breakers, fallas de fetch) para post-mortem. Antes logueaba INFO+ (httpx/access
     # por ciclo) y crecía a varios MB de ruido. En operación normal casi no crece.
-    # RotatingFileHandler: 5 MB × 5 backups (cap 25 MB, mantiene el árbol liviano).
+    # RotatingFileHandler: 5 MB × 5 backups (cap 25 MB) en db_dir, fuera del árbol.
     file_handler = RotatingFileHandler(
         _LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8",
     )

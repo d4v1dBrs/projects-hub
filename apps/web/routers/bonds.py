@@ -1,27 +1,32 @@
 """Router del popup de detalle de bono (HTMX).
 
-GET  /bond/{ticker}/detail   → fragmento modal (Detalles + cashflows + calculadora).
-POST /bond/{ticker}/metrics  → recalcula métricas desde precio o TIR (calculadora).
+GET  /bond/{ticker}/detail          → fragmento modal (tabs Trading / Gráfico / Quant).
+GET  /bond/{ticker}/horizon-matrix  → matriz de horizonte (tab Quant, hx-get).
+GET  /bond/{ticker}/price-history   → JSON para Lightweight Charts (tab Gráfico).
+POST /bond/{ticker}/metrics         → calculadora precio↔TIR (el modal rediseñado ya
+                                      no tiene el form; queda como API).
+GET/POST /bond/{ticker}/cer         → drawer "Proyección CER" (ídem: sin botón hoy).
 
-Reusa apps.web.bond_detail.get_bond_detail/calculate (ya sólidos) con los
-providers de app.state. Reemplaza los tabs DETALLES/CALCULADORA del SPA.
+Reusa apps.web.bond_detail.* con los providers de app.state.
 """
 
 from __future__ import annotations
 
 import asyncio
 import html
+import logging
 import math
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Form, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from apps.web.bond_detail import calculate, cer_projection, get_bond_detail, get_horizon_matrix
 from apps.web.deps import get_fx, get_indices, get_provider, get_repo, get_state
 from apps.web.templates import TEMPLATES as _TEMPLATES
 from core.infrastructure.rem_provider import REMProvider
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -191,22 +196,25 @@ def horizon_matrix(ticker: str, request: Request, lag: Lag = 1,
     data = get_horizon_matrix(ticker, repo, provider, indices, fx, settlement_lag=lag)
     if not data:
         return HTMLResponse("<div class='text-red-400 text-sm p-4'>Instrumento sin datos para análisis.</div>")
-        
+
     return _TEMPLATES.TemplateResponse(request, "fragments/horizon_matrix.html", {"data": data})
 
 @router.get("/bond/{ticker}/price-history")
-def price_history(ticker: str, provider=Depends(get_provider)):
-    """Devuelve el historial de precios para Lightweight Charts.
-    Máximo 3 años (1095 días)."""
-    import asyncio
-    import datetime
-    from fastapi.responses import JSONResponse
-    
-    # fetch_historical_prices usa data912/BYMA y no usa SQLite
-    series = provider.fetch_historical_prices(ticker, days=1095)
-    
-    out = []
-    for d, p in sorted(series.items()):
-        out.append({"time": d.isoformat(), "value": p})
-    
-    return JSONResponse(out)
+def price_history(ticker: str, provider=Depends(get_provider), repo=Depends(get_repo)):
+    """Cierres diarios (máx. 3 años) en el formato de Lightweight Charts.
+
+    El ticker se valida contra el catálogo ANTES de tocar la red: la ruta es pública y
+    `fetch_historical_prices` sale a Data912 y, si trae poco, a BYMA (cliente nuevo,
+    hasta 40s) por cada llamada — sin este guard cualquier string inventado disparaba
+    dos requests salientes. Una falla de red vuelve como 503 con lista vacía para que
+    el chart del modal degrade en vez de romper el popup entero con un 500."""
+    t = ticker.upper().strip()
+    base = t[:-4] if t.endswith("_CER") else t
+    if repo.get_instrument_by_ticker(t) is None and repo.get_instrument_by_ticker(base) is None:
+        return JSONResponse([], status_code=404)
+    try:
+        series = provider.fetch_historical_prices(ticker, days=1095)
+    except Exception as exc:   # borde HTTP: cualquier fallo del provider
+        logger.warning("price-history %s: %s", ticker, exc)
+        return JSONResponse([], status_code=503)
+    return JSONResponse([{"time": d.isoformat(), "value": p} for d, p in sorted(series.items())])

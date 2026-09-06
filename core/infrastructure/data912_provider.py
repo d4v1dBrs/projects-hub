@@ -309,10 +309,10 @@ class Data912MarketDataProvider(IMarketDataProvider):
         # ej. TXMJ8_CER) cotiza/se acumula bajo el símbolo de mercado (TXMJ8).
         if t.endswith("_CER"):
             t = t[:-4]
-            
+
         csv_series = self._load_history().get(t, {})
         store_series = {}
-        
+
         # 1. Intentar Data912 (tiene caché de 6hs interno)
         bars = self.fetch_bond_history(t)
         if bars:
@@ -321,7 +321,7 @@ class Data912MarketDataProvider(IMarketDataProvider):
                     store_series[date.fromisoformat(b["date"])] = float(b["c"])
                 except (KeyError, TypeError, ValueError):
                     pass
-                    
+
         # 2. Si no trajo nada (o muy poco), intentar BYMA open
         if len(store_series) < 10:
             try:
@@ -334,7 +334,7 @@ class Data912MarketDataProvider(IMarketDataProvider):
 
         if not csv_series and not store_series:
             return {}
-            
+
         merged = {**csv_series, **store_series}
         if days <= 0:
             return merged

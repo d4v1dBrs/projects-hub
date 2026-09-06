@@ -1,14 +1,14 @@
 #!/bin/bash
-# HTTPS para el Monitor (nginx + Let's Encrypt) — se corre EN EL DROPLET, como root.
+# HTTPS para la web (nginx + Let's Encrypt) — se corre EN EL SERVIDOR, como root.
 #
 #   bash deploy/setup-https.sh monitor.midominio.com  tu@email.com
 #
-# REQUISITO QUE NO SE PUEDE SALTEAR: un DOMINIO apuntando por A a la IP del droplet.
-# Let's Encrypt NO emite certificados para IPs desnudas (157.230.87.79 no sirve).
+# REQUISITO QUE NO SE PUEDE SALTEAR: un DOMINIO apuntando por A a la IP del servidor.
+# Let's Encrypt NO emite certificados para IPs desnudas (la IP pública sola no sirve).
 # Opciones, de menor a mayor fricción:
 #   * DuckDNS (gratis, 5 min): duckdns.org -> subdominio gratis -> apuntá el A a la IP.
 #     Queda algo como  mimonitor.duckdns.org
-#   * Dominio propio (~USD 10/año): registralo y creá un A -> 157.230.87.79
+#   * Dominio propio (~USD 10/año): registralo y creá un A -> la IP pública del servidor
 #   * Cloudflare delante: también necesita dominio, pero te da HTTPS + WAF gratis.
 #
 # Qué hace:
@@ -33,7 +33,7 @@ if [[ $EUID -ne 0 ]]; then echo "correlo como root (sudo)"; exit 1; fi
 echo ">>> 1/5  Verificando que $DOMINIO apunte a esta máquina..."
 IP_PUBLICA="$(curl -fsS --max-time 10 https://api.ipify.org || true)"
 IP_DOMINIO="$(getent hosts "$DOMINIO" | awk '{print $1}' | head -1 || true)"
-echo "     IP del droplet : ${IP_PUBLICA:-<no se pudo averiguar>}"
+echo "     IP del servidor: ${IP_PUBLICA:-<no se pudo averiguar>}"
 echo "     IP del dominio : ${IP_DOMINIO:-<no resuelve>}"
 if [[ -z "$IP_DOMINIO" ]]; then
     echo "!!!  $DOMINIO no resuelve. Creá el registro A y esperá la propagación."
@@ -56,18 +56,27 @@ cat > /etc/nginx/sites-available/monitores <<NGINX
 server {
     listen 80;
     server_name ${DOMINIO};
+    # SSE (/stream): sin buffering y sin timeout, o el push muere a los 60s. Sólo acá
+    # (en `location /` esos defaults cortan upstreams colgados y absorben clientes lentos).
+    location = /stream {
+        proxy_pass http://127.0.0.1:${APP_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host              \$host;
+        proxy_set_header X-Real-IP         \$remote_addr;
+        proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 24h;
+        chunked_transfer_encoding off;
+    }
     location / {
         proxy_pass http://127.0.0.1:${APP_PORT};
         proxy_set_header Host              \$host;
         proxy_set_header X-Real-IP         \$remote_addr;
         proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-
-        # SSE (/stream): sin buffering y sin timeout, o el push muere a los 60s.
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_read_timeout 24h;
-        chunked_transfer_encoding off;
     }
 }
 NGINX

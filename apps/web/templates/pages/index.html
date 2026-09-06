@@ -413,9 +413,16 @@
             var payload = { layout: grid.save(false), hidden: HIDDEN_PANELS, cols: HIDDEN_COLS };
             fetch("/panels/layout", { method: "POST", headers: { "Content-Type": "application/json" },
                                       body: JSON.stringify(payload) })
-              .then(function () {
-                var t = action.textContent; action.textContent = "✓ Guardado";
-                setTimeout(function () { action.textContent = t; }, 1500);
+              .then(function (r) {
+                // Sin sesión el server redirige a /login (fetch lo sigue y devuelve HTML 200):
+                // sólo `redirected` identifica ese caso; un !ok con sesión es otro error
+                // (413 layout grande, 400 JSON, 500 disco) y no hay que mandar al login.
+                var t = action.textContent, msg;
+                if (r.redirected) msg = "⚠ Iniciá sesión";
+                else if (!r.ok) msg = "⚠ No se guardó (" + r.status + ")";
+                else msg = "✓ Guardado";
+                action.textContent = msg;
+                setTimeout(function () { action.textContent = t; }, 2000);
               }).catch(function () {});
           } else if (action.dataset.action === "reset-default") {
             localStorage.removeItem("grid-layout-v3");

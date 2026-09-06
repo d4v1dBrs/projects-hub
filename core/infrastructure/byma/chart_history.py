@@ -1,7 +1,7 @@
 """Cierres diarios de BYMA open vía el endpoint **chart** (TradingView-style).
 
-Drop-in de `series_historicas.fetch_history` (misma firma) pero MUCHO mejor para
-el backfill de `price_history`:
+Reemplazó al POST `seriesHistoricas/especies` (paginado, ~30pt/llamada) como fuente
+de cierres para el histórico del modal (`/bond/{t}/price-history`):
 
   GET /chart/historical-series/history?symbol=TICKER 24HS&resolution=D&from=&to=
 
@@ -91,8 +91,8 @@ def fetch_history(symbol: str, *, max_days: int = 400, resolution: str = "D",
     """Cierres diarios `{date: close}` de `symbol` (hasta `max_days` atrás) vía el
     endpoint chart de BYMA open. Best-effort. `client` inyectable.
 
-    Misma firma que `series_historicas.fetch_history` → intercambiable como `fetch`
-    en `price_history.prime_from_byma_historico`."""
+    Lo consume `data912_provider.fetch_historical_prices` como respaldo cuando Data912
+    trae pocas ruedas."""
     sym = (symbol or "").upper().strip()
     if not sym:
         return {}

@@ -35,15 +35,14 @@ python-dotenv==1.2.2      # --env-file de uvicorn (la app usa su propio loader e
 PyYAML==6.0.3             # --log-config .yaml de uvicorn
 # uvloop: NO se pinea a propósito. Su marker es `sys_platform != 'win32'`, así que en esta
 # máquina (Windows, sin venv) no se instala y no hay versión verificada que fijar; en el
-# droplet entra por `uvicorn[standard]` de requirements.txt, que es lo que instala deploy.sh
-# (el lock es para el bootstrap local reproducible, ver docs/plan-optimizacion-2026-08-31).
+# servidor entra por `uvicorn[standard]` de requirements.txt, que es lo que instala deploy.sh
+# (el lock es para el bootstrap local reproducible).
 # colorama (marker sys_platform == 'win32', 0.4.6 acá): solo colorea el log de consola,
 # no afecta el runtime servido — se deja libre a propósito.
 httpx==0.28.1
 # requests: ficha técnica BYMA — `requests.Session` en byma/catalog_enrich.py (la corre el
-# _startup_reconcile del lifespan) y en scripts/byma_enrich_seed_isin.py. Las dos sesiones
-# verifican TLS con la política ÚNICA del repo (core/infrastructure/_tls.py::should_verify),
-# no con un trust store propio. Dependencia de runtime → el pin queda.
+# _startup_reconcile del lifespan). Verifica TLS con la política ÚNICA del repo
+# (core/infrastructure/_tls.py::should_verify). Dependencia de runtime → el pin queda.
 requests==2.33.1
 jinja2==3.1.6
 python-multipart==0.0.29
@@ -56,7 +55,6 @@ certifi==2026.2.25        # transitiva (httpx) — pinned: bundle de CAs p/ veri
 SQLAlchemy==2.0.50
 pydantic==2.13.4
 pydantic-settings==2.14.1
-optionlab==1.6.0
 
 # --- auth (login JWT + hashing). Sin esto, el bootstrap documentado con el lock
 # (CLAUDE.md/README) revienta con ModuleNotFoundError: core.security las importa. ---
@@ -64,8 +62,4 @@ passlib==1.7.4
 bcrypt==3.2.2
 PyJWT==2.13.0
 
-# --- export PDF del panel ON ---
-fpdf2==2.8.7
-matplotlib==3.10.9
-
-# --- dev: ver requirements-dev.txt (fuera de prod) ---
+# --- dev (sólo ruff): ver requirements-dev.txt ---

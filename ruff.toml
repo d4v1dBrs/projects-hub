@@ -1,7 +1,7 @@
-# Configuración de herramientas de desarrollo (no empaqueta el proyecto).
+# Linter (único tooling de calidad del repo):  py -3.12 -m ruff check .
 line-length = 100
 target-version = "py312"
-extend-exclude = ["data", "docs", "scripts/_*"]
+extend-exclude = ["data", "docs"]
 
 [lint]
 # F = pyflakes (imports/vars sin usar, redefiniciones, nombres indefinidos) — lo más valioso.
@@ -10,12 +10,8 @@ extend-exclude = ["data", "docs", "scripts/_*"]
 select = ["F", "E", "W"]
 # E501 largo de línea (deliberado, sin `ruff format`); E701/E702 sentencias compactas en una
 # línea (estilo del codebase, ej. `if not x: return`); E731 lambda asignada; E741 nombres l/I/O;
-# E402 import no-top (conftest hace sys.path antes de importar). Todos intencionales.
+# E402 import no-top (run.py y scripts/ importan settings después del guard de versión).
 ignore = ["E501", "E701", "E702", "E731", "E741", "E402"]
 
-[format]
-# No se utiliza
-
 [lint.per-file-ignores]
-# Ignorar imports en init
 "__init__.py" = ["F401"]

@@ -1,43 +1,35 @@
-# Monitor de Bonos — dependencias de runtime.
-# Python 3.12 del sistema, SIN venv en el proyecto. El runtime es el Python de
-# Programs (py -3.12). El antiguo "Store Python" ya no existe. Instalar con:
-#   py -3.12 -m pip install -r requirements.txt
-#   (equiv.: & "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m pip install -r requirements.txt)
+# Dependencias de RUNTIME (las instala deploy.sh en el servidor; local: py -3.12).
+#   py -3.12 -m pip install -r requirements.txt        # versiones abiertas
+#   py -3.12 -m pip install -r requirements.lock       # pins conocidos-buenos (local)
+# Cada dependencia de acá tiene un import verificado en apps/, core/ o config/.
 
-# --- núcleo financiero (sin cambios) ---
+# --- núcleo financiero ---
 numpy
-scipy
+scipy                    # xirr.py (Brent), yield_curve.py
 pandas
 python-dateutil
-holidays
-pandas-market-calendars
-openpyxl                 # solo seeding (scripts/ingest_master.py)
-websockets               # futures_provider
+holidays                 # holiday_engine
+pandas-market-calendars  # holiday_engine (calendario BYMA)
+openpyxl                 # holiday_engine (feriados_ar.xlsx) + engine de pd.read_excel del auto-seed
+websockets               # futures_provider (Matba/Rofex WS) + extra [standard] de uvicorn
 
-# --- nuevas (reingeniería) ---
+# --- web / async ---
 fastapi
 uvicorn[standard]
 httpx
 # requests: ficha técnica BYMA — requests.Session en byma/catalog_enrich (la corre el
-# _startup_reconcile del lifespan) + scripts/byma_enrich_seed_isin. Las dos sesiones sacan
-# su verificación TLS de core/infrastructure/_tls.py (política única del repo).
+# _startup_reconcile del lifespan). Verificación TLS por core/infrastructure/_tls.py.
 requests
 jinja2
-python-multipart
-sse-starlette
+python-multipart         # Form() del login / ABM
+sse-starlette            # /stream
 SQLAlchemy>=2
 pydantic>=2
 pydantic-settings
-optionlab                # analytics avanzados de estrategias de opciones (P(profit), EV, ranges)
-passlib                  # hashing de contraseñas de usuarios
-bcrypt<4.0.0             # dependencia de passlib fijada por un bug conocido en la lib
-PyJWT                    # generación y validación de tokens JWT (cookies)
 
-# --- export PDF del panel ON (botón 🖨️ /on/pdf + scripts/export_on_pdf.py) ---
-fpdf2                    # armado del PDF (Unicode vía arial.ttf de Windows)
-matplotlib               # scatter TIR-vs-MD de las tarjetas (sin él → PDF sin charts)
+# --- auth ---
+passlib                  # hashing de contraseñas
+bcrypt<4.0.0             # backend de passlib, fijado por un bug conocido en la lib
+PyJWT                    # cookie de sesión (JWT)
 
-# --- dev: ver requirements-dev.txt ---
-# pytest / hypothesis / ruff NO van acá: los instalaría deploy.sh en el droplet, y son
-# ~47 MB inútiles en produccion (Render free tiene 512 MB). Para el gate local:
-#   py -3.12 -m pip install -r requirements.lock -r requirements-dev.txt
+# --- dev: ver requirements-dev.txt (sólo ruff; no va al servidor) ---

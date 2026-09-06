@@ -71,21 +71,12 @@ def _prune_login_attempts(now: float) -> None:
             _login_attempts.pop(key, None)
 
 
-# Destino post-login por pestaña, en el MISMO orden que el nav de base.html. La home
-# `/` la sirve el router de paneles, montado con RequireTabPermission("bonos"): mandar
-# a `/` a un usuario sin esa pestaña lo rebotaba al login para siempre (login OK → 302
-# `/` → RequiresLoginException → 302 /login), sin ningún mensaje.
+# Destino post-login por pestaña, en el MISMO orden que el nav de base.html. Sólo las
+# pestañas con router vivo en este fork: `/` es la home PÚBLICA de la web personal y el
+# terminal de bonos vive en `/bonos`. (El monitor original tenía 11 pestañas; las que
+# no tienen router acá mandaban al usuario a un 404 apenas se logueaba.)
 _TAB_LANDING = (
-    ("bonos", "/"),
-    ("on", "/on"),
-    ("curva", "/curva"),
-    ("cartera", "/cartera"),
-    ("bcra", "/bcra"),
-    ("cashflows", "/cashflows"),
-    ("fci", "/fci"),
-    ("escenarios", "/escenarios"),
-    ("opciones", "/options"),
-    ("catalogo", "/catalogo"),
+    ("bonos", "/bonos"),
     ("abm", "/abm"),
 )
 
@@ -94,7 +85,7 @@ def _landing_url(user: UserORM):
     """Primera pestaña que el usuario SÍ puede ver (None si no tiene ninguna)."""
     tabs = user.allowed_tabs or []
     if user.is_admin or "*" in tabs:
-        return "/"
+        return "/bonos"
     for tab, url in _TAB_LANDING:
         if tab in tabs:
             return url

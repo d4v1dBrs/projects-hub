@@ -297,15 +297,6 @@
           <label style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-dim);">Permisos de Módulos (solo usuarios regulares)</label>
           <div class="permissions-grid">
             <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="bonos" checked><span class="slider"></span></label> Bonos</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="on" checked><span class="slider"></span></label> O.N's</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="curva"><span class="slider"></span></label> Curva</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="cartera"><span class="slider"></span></label> Cartera</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="bcra"><span class="slider"></span></label> BCRA</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="cashflows"><span class="slider"></span></label> Cashflows</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="fci"><span class="slider"></span></label> FCI</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="escenarios"><span class="slider"></span></label> Escenarios</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="opciones"><span class="slider"></span></label> Opciones</label>
-            <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="catalogo"><span class="slider"></span></label> Catálogo</label>
             <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="abm"><span class="slider"></span></label> ABM Bonos</label>
           </div>
         </div>
@@ -401,15 +392,6 @@
                     <div class="permissions-grid">
                       {% set u_tabs = u.allowed_tabs or [] %}
                       <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="bonos" {% if "bonos" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Bonos</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="on" {% if "on" in u_tabs %}checked{% endif %}><span class="slider"></span></label> O.N's</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="curva" {% if "curva" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Curva</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="cartera" {% if "cartera" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Cartera</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="bcra" {% if "bcra" in u_tabs %}checked{% endif %}><span class="slider"></span></label> BCRA</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="cashflows" {% if "cashflows" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Cashflows</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="fci" {% if "fci" in u_tabs %}checked{% endif %}><span class="slider"></span></label> FCI</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="escenarios" {% if "escenarios" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Escenarios</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="opciones" {% if "opciones" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Opciones</label>
-                      <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="catalogo" {% if "catalogo" in u_tabs %}checked{% endif %}><span class="slider"></span></label> Catálogo</label>
                       <label class="permission-item"><label class="toggle-switch"><input type="checkbox" name="tabs" value="abm" {% if "abm" in u_tabs %}checked{% endif %}><span class="slider"></span></label> ABM Bonos</label>
                     </div>
                   </div>

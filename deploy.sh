@@ -1,6 +1,13 @@
 #!/bin/bash
-# Script de actualización automática para el servidor de producción.
-# Para ejecutarlo: bash deploy.sh
+# Deploy en el servidor de producción (Oracle Cloud, host `paginapersonal`).
+#
+# FLUJO REAL, de punta a punta:
+#   local :  git push origin main            # origin = d4v1dBrs/projects-hub
+#   server:  ssh web-personal 'cd projects-hub && bash deploy.sh'
+#
+# El clon del servidor (/home/ubuntu/projects-hub) tiene como `origin` ese mismo repo,
+# así que el `git pull` de abajo trae exactamente lo que se pusheó. systemd corre
+# `venv/bin/python run.py` (deploy/monitores.service); nginx proxya :80 → :8000.
 set -euo pipefail   # aborta si un paso falla (antes imprimía "completado" igual)
 
 # Todo lo de abajo es RELATIVO al repo (venv/, requirements.txt, el healthcheck):
@@ -8,12 +15,15 @@ set -euo pipefail   # aborta si un paso falla (antes imprimía "completado" igua
 cd "$(dirname "$0")"
 
 echo "======================================"
-echo "Iniciando despliegue de Monitor Renta Fija"
+echo "Iniciando despliegue (projects-hub)"
 echo "======================================"
 
 # 1. Traer los últimos cambios de GitHub
 echo ">>> Descargando últimas actualizaciones..."
-git pull origin main || git pull origin master
+# --ff-only: el árbol del servidor NUNCA debe tener commits propios ni merges — si el
+# pull no es fast-forward, alguien editó en el servidor y hay que resolverlo a mano
+# (git status / git stash) en vez de que un merge automático lo esconda.
+git pull --ff-only origin main
 
 # 2. venv + dependencias. IDEMPOTENTE: si el venv no está, se crea (antes el script
 # SOLO lo activaba, así que un rebuild desde cero —droplet perdido, migración de
@@ -67,9 +77,10 @@ fi
 source venv/bin/activate
 
 echo ">>> Instalando dependencias de Python..."
-# requirements.txt (versiones abiertas) y NO requirements.lock: apuntar el deploy al
-# lock quedó refutado en docs/plan-optimizacion-2026-08-31.md (:92 y :316). El lock es
-# para el bootstrap local reproducible. pytest/ruff no van acá (requirements-dev.txt).
+# requirements.txt (versiones abiertas) y NO requirements.lock: el lock fija pins
+# verificados en Windows sin venv (y sin uvloop, que acá SÍ entra por el extra
+# [standard]); es para el bootstrap local reproducible, no para el servidor. ruff no
+# va acá (requirements-dev.txt).
 pip install -r requirements.txt
 
 # 3. Reiniciar el servicio

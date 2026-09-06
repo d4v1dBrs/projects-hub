@@ -1,14 +1,5 @@
-# Dependencias de DESARROLLO — NO se instalan en producción.
-#
-# `deploy.sh` no las trae: instala
-# `requirements.txt`. Sacarlas de ahí ahorra ~47 MB y ~1.200 archivos en cada
-# deploy del droplet.
-#
-# Instalación local (para correr el gate):
+# Dependencias de DESARROLLO — NO se instalan en el servidor (deploy.sh usa requirements.txt).
 #   py -3.12 -m pip install -r requirements.lock -r requirements-dev.txt
-#
-# Versiones fijas: mismo criterio que requirements.lock (estado conocido-bueno).
-
-pytest==9.0.3
-hypothesis==6.155.2      # property-based testing (invariantes de pricing/day-count)
-ruff==0.15.16            # linter (config en ruff.toml): F/E/W, sin reformateo masivo
+# Este fork no tiene suite de tests (quedó en el monitor original); el único tooling es el
+# linter:  py -3.12 -m ruff check .   (config en ruff.toml)
+ruff==0.15.16

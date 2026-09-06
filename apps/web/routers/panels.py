@@ -1,6 +1,6 @@
 """Router de paneles de bonos (HTMX SSR).
 
-`GET /` → página index con los 6 paneles de bonos.
+`GET /bonos` → página index con los paneles de bonos (PANEL_ORDER).
 `GET /panels/{id}/rows` → fragmento <tbody> que HTMX refresca cada 5s.
 
 Reemplaza el polling global de `/api/snapshot` + el render JS de `app.js` por
@@ -27,6 +27,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from apps.web.json_script import json_for_script
 from apps.web.deps import get_fx, get_indices, get_provider, get_repo, get_rofex, get_state
+from apps.web.deps_auth import get_current_user_html
 from apps.web.templates import TEMPLATES as _TEMPLATES
 from apps.web.panels_rows import (  # noqa: F401 — re-exported for tests + external callers
     _ley_of, _ticker_ccy, _fit_log_curve, _spread_carry, _rv_map,
@@ -135,10 +136,18 @@ def index(request: Request, state=Depends(get_state)):
     )
 
 
+# El layout es un archivo GLOBAL (lo ven todos los que abren /bonos): escribirlo o
+# borrarlo exige sesión, y el body se acota ANTES de parsearlo — sin cap, un POST
+# anónimo podía pisar el layout del admin o llenar el disco desde internet.
+_LAYOUT_MAX_BYTES = 64 * 1024
+
+
 @router.post("/panels/layout")
-async def save_default_layout(request: Request):
+async def save_default_layout(request: Request, _user=Depends(get_current_user_html)):
     """Guarda el layout actual ({layout, hidden, cols}) como default del dashboard."""
     raw = await request.body()
+    if len(raw) > _LAYOUT_MAX_BYTES:
+        return JSONResponse({"ok": False, "error": "layout too large"}, status_code=413)
     try:
         obj = json.loads(raw)
     except Exception:
@@ -158,7 +167,7 @@ async def save_default_layout(request: Request):
 
 
 @router.delete("/panels/layout")
-def clear_default_layout():
+def clear_default_layout(_user=Depends(get_current_user_html)):
     """Borra el layout default (vuelve al auto-layout)."""
     try:
         os.remove(_LAYOUT_FILE)
