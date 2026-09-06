@@ -3,10 +3,6 @@
 Contains all pure computation helpers (_fmt, _cell_class, _row_values, etc.)
 and the _build_*_rows / _chart_payload / _share_* functions.
 The FastAPI route handlers remain in routers/panels.py.
-
-External callers:
-  on_service.py  → _ley_of, _ticker_ccy
-  routers/curva.py → _fit_log_curve
 """
 
 from __future__ import annotations
@@ -20,8 +16,6 @@ import numpy as np
 
 from core.domain.currency import ccy_from_suffix
 from core.domain.instrument_groups import PANEL_LIDER
-from core.domain.on_classification import sector_for, sector_meta
-from core.domain.currency import position_currency
 from core.domain.services import FinancialEngine
 from core.infrastructure.futures_provider import (
     DEFAULT_SYMBOLS as ROFEX_SYMBOLS,
@@ -31,7 +25,7 @@ from core.infrastructure.futures_provider import (
 from apps.web.routers.panels_schema import (
     PANELS, CCY_FILTER_PANELS, LEY_FILTER_PANELS,
     PRICE_REQUIRED_PANELS,
-    _HL_COL_KEY, _BEI_TABLE_KEY, _VR_COLS, _PANEL_LIDER_COLS, _FUTUROS_COLS,
+    _HL_COL_KEY, _BEI_TABLE_KEY, _PANEL_LIDER_COLS, _FUTUROS_COLS,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,17 +46,6 @@ def _ticker_ccy(ticker: str) -> str:
 
 # ── Rich/cheap: ajuste de curva log ─────────────────────────────────────────
 
-# Grupos para el ajuste de curva log (TIR = a + b·ln(MD)) — un fit por grupo.
-# Sólo curvas peso de flavor único (Tasa Fija nominal, CER real): los soberanos
-# hard-dollar conviven en 3 flavors (peso/MEP/cable) con escalas de precio/TIR
-# distintas, y mezclarlos da rich/cheap sin sentido.
-_RV_GROUPS = {
-    "Tasa Fija": {"LECAP", "BONCAP", "BONOFIJA"},
-    "CER": {"CER", "LECER", "BONCER", "BONCER ZC", "CON CUPON", "STEP-UP"},
-}
-_ONE_MONTH_YEARS = 1.0 / 12.0
-
-
 def _fit_log_curve(metrics) -> Optional[tuple]:
     """TIR = a + b·ln(MD) sobre los (MD, TIR) del grupo. None si <3 puntos."""
     pairs = [(m.duration, m.tir) for m in metrics
@@ -76,56 +59,6 @@ def _fit_log_curve(metrics) -> Optional[tuple]:
         return float(a), float(b)
     except Exception:
         return None
-
-
-def _spread_carry(m, fit) -> tuple:
-    """(spread_curva, carry_roll) en decimales. spread = TIR − TIR_curva."""
-    if fit is None or not m.duration or m.duration <= 0 or m.tir is None:
-        return None, None
-    a, b = fit
-    try:
-        tir_fitted = a + b * math.log(m.duration)
-        spread = m.tir - tir_fitted
-        carry = None
-        tem = FinancialEngine.tea_to_tem(m.tir)
-        dm_rolled = m.duration - _ONE_MONTH_YEARS
-        if tem is not None and dm_rolled > 0.001:
-            tir_rolled = a + b * math.log(dm_rolled)
-            roll_down = -m.duration * (tir_rolled - m.tir)
-            carry = tem + roll_down
-        return spread, carry
-    except Exception:
-        return None, None
-
-
-def _rv_map(state) -> dict:
-    """{ticker: {"grupo", "spread"(%u), "carry"(%u)}} vía fit log por (grupo, moneda).
-
-    Bucketea por moneda: mezclar globals USD (~9%) con soberanos ARS (~60%) en
-    una sola curva da spreads sin sentido. Cada curva se ajusta sobre un universo
-    de rendimiento homogéneo.
-    """
-    by_bucket: dict = {}
-    for m in state.metrics():
-        inst = m.snapshot.instrument if m.snapshot else None
-        if not inst:
-            continue
-        for label, types in _RV_GROUPS.items():
-            if inst.instrument_type in types:
-                ccy = position_currency(inst.instrument_type, inst.ticker)
-                by_bucket.setdefault((label, ccy), []).append(m)
-                break
-    out: dict = {}
-    for (label, _ccy), ms in by_bucket.items():
-        fit = _fit_log_curve(ms)
-        for m in ms:
-            sp, ca = _spread_carry(m, fit)
-            out[m.snapshot.instrument.ticker] = {
-                "grupo": label,
-                "spread": sp * 100 if sp is not None else None,
-                "carry": ca * 100 if ca is not None else None,
-            }
-    return out
 
 
 # ── Helpers: formato de celdas ───────────────────────────────────────────────
@@ -206,30 +139,6 @@ def _cell_class(value, kind: str) -> str:
 
 
 # ── Builders de filas ────────────────────────────────────────────────────────
-
-def _build_rv_rows(state) -> List[dict]:
-    """Filas del panel valor_relativo: todos los bonos con su spread vs curva
-    (por grupo), ordenados del más barato (spread > 0) al más caro."""
-    rv = _rv_map(state)
-    by_ticker = {m.snapshot.instrument.ticker: m for m in state.metrics()
-                 if m.snapshot and m.snapshot.instrument}
-    rows = []
-    for tk, info in rv.items():
-        if info["spread"] is None:
-            continue
-        m = by_ticker.get(tk)
-        if m is None:
-            continue
-        raw = {
-            "ticker": tk, "grupo": info["grupo"], "duration": m.duration,
-            "tir": _pct(m.tir), "spread_curva": info["spread"], "carry_roll": info["carry"],
-        }
-        cells = [{"text": _fmt(raw[c["key"]], c["kind"], c.get("decimals", 2)),
-                  "cls": _cell_class(raw[c["key"]], c["kind"])} for c in _VR_COLS]
-        rows.append({"ticker": tk, "cells": cells, "_spread": info["spread"]})
-    rows.sort(key=lambda r: r["_spread"], reverse=True)
-    return rows
-
 
 def _build_panel_lider_rows(provider) -> List[dict]:
     """Acciones del Panel Líder desde el cache de Data912 (/arg_stocks vía
@@ -419,29 +328,16 @@ def _build_bei_rows(panel_id: str, state) -> List[dict]:
     return rows
 
 
-# Columnas que un panel HEREDA del schema pero no puede poblar. `provinciales` reusa
-# `_ON_COLS` (misma economía que una ON hard-dollar), pero "Sector" es la taxonomía de
-# emisores CORPORATIVOS de `on_classification`: los 28 subsoberanos del catálogo caen
-# TODOS en "Otros" y `_build_rows` sólo la puebla para el panel de ONs, así que la
-# columna salía siempre "—" con su <th> y su toggle del Config operando sobre nada.
-# (Una taxonomía subsoberana propia —provincia/municipio/región— sería otra cosa.)
-_PANEL_DROP_COLS = {"provinciales": {"sector"}}
-
-
 def panel_columns(panel_id: str) -> List[dict]:
-    """Columnas EFECTIVAS de un panel = las del schema menos las que no puede poblar.
+    """Columnas EFECTIVAS de un panel (las del schema).
 
     Fuente ÚNICA para el `<th>` del dashboard, el `ncols` del fragmento y las celdas:
     si se desalinean, el toggle `hcol-N` del Config oculta la columna equivocada."""
-    cols = PANELS.get(panel_id, (None, None, []))[2]
-    drop = _PANEL_DROP_COLS.get(panel_id)
-    return [c for c in cols if c["key"] not in drop] if drop else list(cols)
+    return list(PANELS.get(panel_id, (None, None, []))[2])
 
 
 def _build_rows(panel_id: str, state, provider=None, cols_override=None,
                 metrics_override=None) -> List[dict]:
-    if panel_id == "valor_relativo":
-        return _build_rv_rows(state)
     if panel_id == "panel_lider":
         return _build_panel_lider_rows(provider)
     if panel_id in _BEI_TABLE_KEY:
@@ -481,8 +377,6 @@ def _build_rows(panel_id: str, state, provider=None, cols_override=None,
         if price_required and not m.snapshot.price:
             continue
         vals = _row_values(m, today)
-        if panel_id == "obligaciones_negociables":
-            vals["sector"] = sector_meta(sector_for(m.snapshot.instrument)).short
         ccy = _ticker_ccy(vals["ticker"]) if ccy_filterable else None
         cells = []
         hl_key = _HL_COL_KEY.get(panel_id)

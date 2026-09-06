@@ -29,15 +29,9 @@ from apps.web.json_script import json_for_script
 from apps.web.deps import get_fx, get_indices, get_provider, get_repo, get_rofex, get_state
 from apps.web.deps_auth import get_current_user_html
 from apps.web.templates import TEMPLATES as _TEMPLATES
-from apps.web.panels_rows import (  # noqa: F401 — re-exported for tests + external callers
-    _ley_of, _ticker_ccy, _fit_log_curve, _spread_carry, _rv_map,
-    _next_coupon_date, _pct, _row_values, _fmt, _cell_class,
-    _build_rv_rows, _build_panel_lider_rows, _build_futuros_rows,
-    _implied_rates, _peso_tea_curve, _futuros_label, _build_futuros_share,
-    _build_bei_rows, _build_rows, _chart_payload, panel_columns,
-    _share_full_cols, _drop_empty_share_cols,
-    _ALL_BOND_COLS, _SHARE_DROP_COLS,
-    _RV_GROUPS, _ONE_MONTH_YEARS, _TASA_FIJA_TYPES,
+from apps.web.panels_rows import (
+    _build_futuros_rows, _build_futuros_share, _build_rows, _chart_payload,
+    _drop_empty_share_cols, _share_full_cols, panel_columns,
 )
 from config.settings import settings
 from core.holiday_engine import settlement_byma_date
@@ -216,7 +210,6 @@ _PANEL_DESC = {
     "tasa_fija": "Pesos a tasa fija",
     "tamar": "Tasa variable TAMAR / Dual",
     "dolar_linked": "Atados al dólar oficial",
-    "obligaciones_negociables": "Obligaciones Negociables · deuda corporativa USD",
 }
 
 # Reparto del alto gráfico:tabla en la foto, por panel.

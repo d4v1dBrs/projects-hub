@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-_DEFAULT_SHEET = "Obligaciones_Negociables"
+_DEFAULT_SHEET = "Soberanos"
 
 
 def _price_of(state):

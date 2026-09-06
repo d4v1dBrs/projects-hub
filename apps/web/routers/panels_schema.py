@@ -4,8 +4,6 @@ plazo CI, resalte de columna). Es data pura, separada de los builders/rutas de
 `panels.py` para que agregar o editar un panel sea un solo lugar declarativo.
 """
 
-from core.domain.instrument_groups import OBLIGACIONES_NEGOCIABLES, PROVINCIALES
-
 # --- Column schemas (espejo de server._get_columns para los paneles de bonos) --- #
 _BONARES_COLS = [
     {"key": "ticker", "label": "Ticker", "kind": "text"},
@@ -58,19 +56,6 @@ _TASA_FIJA_COLS = [
     {"key": "change_pct", "label": "Var %", "kind": "percent_signed", "decimals": 2},
     {"key": "volume", "label": "Vol $", "kind": "volume"},
 ]
-_ON_COLS = [
-    {"key": "ticker", "label": "Ticker", "kind": "text"},
-    {"key": "short_name", "label": "Emisor", "kind": "text"},
-    {"key": "sector", "label": "Sector", "kind": "text"},  # clasificado por emisor (on_classification)
-    {"key": "vto", "label": "Vto", "kind": "date"},
-    {"key": "price", "label": "Precio", "kind": "number", "decimals": 2},
-    {"key": "technical_value", "label": "V.Téc", "kind": "number", "decimals": 2},
-    {"key": "parity", "label": "Paridad", "kind": "percent", "decimals": 2},
-    {"key": "tir", "label": "TIR", "kind": "percent", "decimals": 2},
-    {"key": "duration", "label": "MD", "kind": "number", "decimals": 2},
-    {"key": "change_pct", "label": "%Día", "kind": "percent_signed", "decimals": 2},
-    {"key": "volume", "label": "Vol $", "kind": "volume"},
-]
 _TAMAR_COLS = [
     {"key": "ticker", "label": "Ticker", "kind": "text"},
     {"key": "vto", "label": "Vto", "kind": "date"},
@@ -82,14 +67,6 @@ _TAMAR_COLS = [
     {"key": "volume", "label": "Vol $", "kind": "volume"},
 ]
 
-_VR_COLS = [
-    {"key": "ticker", "label": "Ticker", "kind": "text"},
-    {"key": "grupo", "label": "Tipo", "kind": "text"},
-    {"key": "duration", "label": "MD", "kind": "number", "decimals": 2},
-    {"key": "tir", "label": "TIR", "kind": "percent", "decimals": 2},
-    {"key": "spread_curva", "label": "vs curva", "kind": "percent_signed", "decimals": 2},
-    {"key": "carry_roll", "label": "C+R 30d", "kind": "percent_signed", "decimals": 2},
-]
 _PANEL_LIDER_COLS = [
     {"key": "ticker", "label": "Ticker", "kind": "text"},
     {"key": "bid", "label": "Compra", "kind": "number", "decimals": 2},
@@ -130,18 +107,11 @@ _BEI_SENDERO_COLS = [
     {"key": "rem_mensual", "label": "REM mensual", "kind": "percent", "decimals": 2},
     {"key": "diff", "label": "BEI − REM", "kind": "percent_signed", "decimals": 2},
 ]
-_BEI_PARES_COLS = [
-    {"key": "lecap", "label": "LECAP", "kind": "text"},
-    {"key": "boncer", "label": "BONCER", "kind": "text"},
-    {"key": "vto_lecap", "label": "Vto LECAP", "kind": "date"},
-    {"key": "vto_cer", "label": "Vto CER", "kind": "date"},
-    {"key": "dias", "label": "Días", "kind": "number", "decimals": 0},
-    {"key": "delta_m1", "label": "δ − 1", "kind": "percent", "decimals": 2},
-    {"key": "infl_mensual_impl", "label": "Infl mes impl.", "kind": "percent", "decimals": 2},
-]
-_BEI_TABLE_KEY = {"bei_tenor": "tenor", "bei_sendero": "sendero", "bei_pares": "pares"}
+_BEI_TABLE_KEY = {"bei_tenor": "tenor", "bei_sendero": "sendero"}
 
-# id -> (título, {instrument_types}, columnas)
+# id -> (título, {instrument_types}, columnas). TODO panel de acá está en PANEL_ORDER:
+# los del monitor que quedaron sin UI (ON, provinciales, valor relativo, BEI pares) se
+# retiraron del registro en vez de dejarlos alcanzables sólo por URL.
 PANELS = {
     "bonares": ("BONARES Y GLOBALES", {"BONAR", "GLOBAL"}, _SOBERANO_USD_COLS),
     "bopreales": ("BOPREALES", {"BOPREAL"}, _SOBERANO_USD_COLS),
@@ -149,17 +119,10 @@ PANELS = {
     "tasa_fija": ("TASA FIJA", {"LECAP", "BONCAP", "BONOFIJA"}, _TASA_FIJA_COLS),
     "dolar_linked": ("DOLAR LINKED", {"DOLAR_LINKED"}, _BONARES_COLS),
     "tamar": ("TAMAR / DUAL", {"PURO", "DUAL", "DUAL_CER_TAMAR"}, _TAMAR_COLS),
-    "obligaciones_negociables": ("OBLIGACIONES NEGOCIABLES · ON USD", set(OBLIGACIONES_NEGOCIABLES), _ON_COLS),
-    # Deuda subsoberana (provincias/municipios). Columnas de ON: misma economía
-    # (hard-dollar amortizable con paridad/VR), distinto emisor. Tipos propios →
-    # panel separado del de ONs corporativas (ver instrument_groups.PROVINCIALES).
-    "provinciales": ("PROVINCIALES · deuda subsoberana", set(PROVINCIALES), _ON_COLS),
-    "valor_relativo": ("VALOR RELATIVO · rich / cheap (curvas peso)", set(), _VR_COLS),
     "panel_lider": ("PANEL LÍDER · acciones", set(), _PANEL_LIDER_COLS),
     "futuros": ("FUTUROS DLR (Matba/Rofex)", set(), _FUTUROS_COLS),
     "bei_tenor": ("BEI POR TENOR (NSS + Fisher)", set(), _BEI_TENOR_COLS),
     "bei_sendero": ("SENDERO MENSUAL · BEI vs REM-BCRA", set(), _BEI_SENDERO_COLS),
-    "bei_pares": ("MÉTODO DE PARES (cross-check NT8 §A)", set(), _BEI_PARES_COLS),
 }
 PANEL_ORDER = ["bonares", "cer", "tasa_fija", "tamar", "dolar_linked", "bopreales",
                "panel_lider", "futuros",
@@ -169,17 +132,16 @@ PANEL_ORDER = ["bonares", "cer", "tasa_fija", "tamar", "dolar_linked", "bopreale
 # ARS/MEP/CABLE en el header (default MEP). La moneda se deriva del sufijo del ticker
 # (D=MEP, C=CABLE, resto=ARS). BOPREALes incluidos: cotizan en pesos (base BPO*),
 # MEP (…D) y cable (…C) — la pata pesos se linkea por ISIN (ver backfill_legs_from_universe).
-CCY_FILTER_PANELS = {"bonares", "obligaciones_negociables", "bopreales", "provinciales"}
+CCY_FILTER_PANELS = {"bonares", "bopreales"}
 
-# Paneles que solo muestran especies CON precio de mercado: una pata sin cotización
-# (price None/0.00, ej. board vacío o especie ilíquida) no genera fila. Solo ONs:
-# en soberanos/CER el backstop de cierre previo ya cubre, y un faltante se nota más.
-PRICE_REQUIRED_PANELS = {"obligaciones_negociables"}
+# Paneles que solo muestran especies CON precio de mercado (una pata sin cotización no
+# genera fila). Hoy ninguno: era el panel de ONs; en soberanos/CER el backstop de
+# cierre previo ya cubre, y un faltante se nota más.
+PRICE_REQUIRED_PANELS: set = set()
 
-# Paneles con filtro de ley aplicable (AR = Argentina / EXT = Extranjera) en el
-# header. La fila lleva `data-ley` (de Instrument.is_ley_argentina; sin dato → EXT,
-# misma convención del pricing MEP/CCL) y el CSS oculta las que no estén activas.
-LEY_FILTER_PANELS = {"obligaciones_negociables", "provinciales"}
+# Paneles con filtro de ley aplicable (AR / EXT) en el header. Hoy ninguno (era ON y
+# provinciales); la plomería (`data-ley` en la fila, `_ley_of`) queda para reactivarlo.
+LEY_FILTER_PANELS: set = set()
 
 # Paneles con selector de plazo de liquidación CI (T+0) / 24hs (T+1). El precio y
 # todo lo que deriva de él (TIR/paridad/MD/V.Téc) se recalcula on-demand para el
@@ -191,7 +153,7 @@ SETTLE_FILTER_PANELS = {"bonares", "cer"}
 # Paneles donde se resalta la columna TIR (fondo accent, mismo efecto que la
 # `sortcol` del FCI) para distinguirla rápido: TODOS los paneles de bonos que
 # tienen columna TIR — soberanos (CER / Tasa Fija / TAMAR / Dólar Linked / Bonares
-# / Bopreales) + corporativos (ON) + valor relativo. Se aplica en el panel del
+# / Bopreales). Se aplica en el panel del
 # dashboard y en el popup de compartir (la foto).
 _TIR_HL_PANELS = {pid for pid, (_t, _types, _cols) in PANELS.items()
                   if any(c.get("key") == "tir" for c in _cols)}

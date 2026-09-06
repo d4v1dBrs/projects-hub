@@ -42,10 +42,9 @@ CUATRO pasos, en este orden, y cada uno mueve la paridad del panel:
      (1+cer_spread)^years)"*. Vale también para el V.Téc devengado al settle.
 
 Es decir: **settlement T+N → lag CER 10 hábiles → spread → max de rieles**.
-Guardas: `tests/test_fin_Z1_financiero_vtec_settlement.py` (los dos escalones),
-`tests/test_rem_R1_financiero_cer_lag.py` (el lag en los dos caminos) y
-`tests/test_aud_B_financiero_dual_cer_tamar.py` (spread + max + round-trip).
-El espejo del motor congelado vive en `tests/_legacy_engine.py`.
+Guardas: en este fork NO hay suite (quedó en el monitor original: test_fin_Z1_*,
+test_rem_R1_*, test_aud_B_* y `_legacy_engine.py`). Verificar a mano contra la
+calculadora IAMC antes de tocar esto (ver CLAUDE.md, invariante DUAL_CER_TAMAR).
 """
 
 from __future__ import annotations

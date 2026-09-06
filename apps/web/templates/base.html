@@ -136,37 +136,6 @@
       }
       return { open: open, close: close };
     })();
-    // --- Cajón "Proyección CER" del popup de detalle (bonos CER) ---
-    function cerOpen() {
-      var m = document.getElementById("modal");
-      if (!m) return;
-      var d = m.querySelector(".cer-drawer"), s = m.querySelector(".cer-scrim");
-      if (d) d.classList.add("open");
-      if (s) s.classList.add("on");
-      if (d && window.A11yModal) A11yModal.open(d, {
-        focus: d.querySelector("button,input,select,textarea,a[href]"), onEsc: cerClose });
-    }
-    function cerClose() {
-      var m = document.getElementById("modal");
-      if (!m) return;
-      var d = m.querySelector(".cer-drawer"), s = m.querySelector(".cer-scrim");
-      if (d) d.classList.remove("open");
-      if (s) s.classList.remove("on");
-      if (d && window.A11yModal) A11yModal.close(d);
-    }
-    function cerMode(btn, mode) {
-      var box = btn.closest("form");
-      if (!box) return;
-      box.querySelectorAll(".cer-mode-btn").forEach(function (b) { b.classList.toggle("on", b === btn); });
-      var hidden = box.querySelector(".cer-mode-val");
-      if (hidden) hidden.value = mode;
-      var custom = mode === "custom";
-      var months = box.querySelector(".cer-months");
-      if (months) months.classList.toggle("editable", custom);
-      var uw = box.querySelector(".unif");
-      if (uw) uw.style.display = custom ? "none" : "";
-      if (window.htmx) htmx.trigger(box, "submit");  // recomputa al cambiar de modo
-    }
   </script>
   {% block head %}{% endblock %}
 </head>

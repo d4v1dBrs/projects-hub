@@ -16,7 +16,7 @@
 {% set CELL = 5 %}
 {% set MARGIN = 5 %}
 {% set DEFH = (372 / CELL) | round | int %}  {# alto por defecto = el de antes (6×62px) #}
-{% set wide = ["valor_relativo", "panel_lider", "futuros", "bei_tenor", "bei_sendero", "bei_pares"] %}
+{% set wide = ["panel_lider", "futuros", "bei_tenor", "bei_sendero"] %}
 {# SSE (§7.4): el server pushea `refresh` cada ciclo del loop (~7s) → los paneles
    recargan event-driven. El `every 60s` es solo fallback lento si la conexión SSE
    se cae (htmx-sse ya reconecta solo); antes era `every 15s` y duplicaba el push
