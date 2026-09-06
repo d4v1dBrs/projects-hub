@@ -52,7 +52,7 @@ ssh web-personal 'cd projects-hub && bash deploy.sh'   # pull --ff-only + venv 3
 
 En el servidor, systemd `monitores.service` corre `venv/bin/python run.py`
 (`deploy/monitores.service`, `Restart=always`) y nginx proxya `:80 → :8000`
-(`deploy/nginx-monitores.conf`, con buffering off y read-timeout largo para el SSE).
+(`deploy/nginx-projects-hub.conf`, con buffering off y read-timeout largo para el SSE).
 `deploy.sh` instala `requirements.txt` (no el lock) y aborta antes del restart si algo
 falla, así el servicio viejo sigue arriba. Logs: `journalctl -u monitores.service -f`.
 

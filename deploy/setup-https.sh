@@ -52,7 +52,7 @@ apt-get install -y -qq certbot python3-certbot-nginx
 
 echo ">>> 3/5  Dejando un vhost mínimo para el desafío HTTP-01..."
 # certbot --nginx necesita un server con este server_name para validar.
-cat > /etc/nginx/sites-available/monitores <<NGINX
+cat > /etc/nginx/sites-available/projects-hub <<NGINX
 server {
     listen 80;
     server_name ${DOMINIO};
@@ -80,7 +80,7 @@ server {
     }
 }
 NGINX
-ln -sf /etc/nginx/sites-available/monitores /etc/nginx/sites-enabled/monitores
+ln -sf /etc/nginx/sites-available/projects-hub /etc/nginx/sites-enabled/projects-hub
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 

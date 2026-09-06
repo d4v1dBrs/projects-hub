@@ -69,7 +69,7 @@ core/infrastructure/
   db/  engine.py (SQLite+WAL) · models.py (UserORM, InstrumentORM, CashflowORM, BymaCatalogORM) · catalog_repository.py (CatalogRepository, auto-seed, type_health, init_db forward-only) · backup.py
 apps/cli/bei.py          compute_bei_tables (bootstrap + NSS + Fisher + sendero); lo llama `_bei_loop`. `_common.py` = fallback CLI sobre el Excel (la app le inyecta el use_case).
 config/settings.py       pydantic-settings (`MONITOR_*`), db_dir y derivados en model_post_init, JWT secret, TZ del proceso, logging.
-scripts/init_admin.py    el único script. deploy.sh + deploy/{monitores.service,nginx-monitores.conf,setup-https.sh}.
+scripts/init_admin.py    el único script. deploy.sh + deploy/{monitores.service,nginx-projects-hub.conf,setup-https.sh}.
 data/  instruments_master.xlsx (SEMILLA del catálogo) · byma/titulos_final.csv (universo BYMA, se reingesta en cada arranque) · feriados_ar.xlsx · history/{cer,tamar,a3500,reservas,bei}_diario.csv (semillas read-only; el estado va a db_dir/history) · history/precio_historico.csv (piso offline del histórico) · obligaciones_negociables.csv (semilla SIN ingesta, ver Pendientes)
 ```
 
@@ -128,7 +128,7 @@ es el peer TCP; `X-Forwarded-For` sólo se cree si el peer está en `settings.tr
 
 **Oracle Cloud** (host `paginapersonal`, ssh `web-personal`), clon en `/home/ubuntu/projects-hub`
 con `origin` = projects-hub. systemd `monitores.service` (`User=ubuntu`, `venv/bin/python
-run.py`, `Restart=always` 5s); nginx `:80 → :8000` (`deploy/nginx-monitores.conf`:
+run.py`, `Restart=always` 5s); nginx `:80 → :8000` (`deploy/nginx-projects-hub.conf`:
 `proxy_buffering off` + `proxy_read_timeout 24h` para el SSE).
 
 ```bash
