@@ -277,12 +277,18 @@
     var HIDDEN_PANELS = lsGet("panels-hidden-v1", null);   // [gs-id]
     if (!Array.isArray(HIDDEN_PANELS)) HIDDEN_PANELS = (DL && Array.isArray(DL.hidden)) ? DL.hidden.slice() : [];
     // v3 guarda claves estables. Las preferencias v2/default antiguas usan indices
-    // de base 1; Bonares tenia V.Tec e historicos antes de este recorte.
+    // de base 1; conservamos el orden anterior de los paneles recortados.
     var HIDDEN_COLS = lsGet("panel-cols-v3", null);        // {gs-id: [columnKey]}
     if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = lsGet("panel-cols-v2", null);
     if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = (DL && isObj(DL.cols)) ? JSON.parse(JSON.stringify(DL.cols)) : {};
-    var LEGACY_BONARES_COLS = ["ticker", "vto", "days_next_coupon", "price", "technical_value",
-      "parity", "tir", "duration", "change_pct", "var_7d", "var_30d", "var_90d", "var_ytd", "var_1y", "volume"];
+    var LEGACY_PANEL_COLS = {
+      bonares: ["ticker", "vto", "days_next_coupon", "price", "technical_value",
+        "parity", "tir", "duration", "change_pct", "var_7d", "var_30d", "var_90d", "var_ytd", "var_1y", "volume"],
+      bopreales: ["ticker", "vto", "days_next_coupon", "price", "technical_value",
+        "parity", "tir", "duration", "change_pct", "var_7d", "var_30d", "var_90d", "var_ytd", "var_1y", "volume"],
+      cer: ["ticker", "category", "vto", "days_next_coupon", "price", "technical_value",
+        "parity", "tir", "duration", "change_pct", "volume"]
+    };
 
     function panelTitle(item) {
       var t = item.querySelector(".ph-title");
@@ -303,7 +309,7 @@
       var id = item.getAttribute("gs-id");
       var buttons = Array.from(item.querySelectorAll(".col-menu .cfg-item"));
       var keys = buttons.map(function (b) { return b.dataset.key; });
-      var legacyKeys = id === "bonares" ? LEGACY_BONARES_COLS : keys;
+      var legacyKeys = LEGACY_PANEL_COLS[id] || keys;
       var hidden = (Array.isArray(HIDDEN_COLS[id]) ? HIDDEN_COLS[id] : []).map(function (v) {
         return /^\d+$/.test(String(v)) ? legacyKeys[Number(v) - 1] : v;
       }).filter(function (key) { return keys.indexOf(key) >= 0; });

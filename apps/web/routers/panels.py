@@ -41,7 +41,7 @@ from core.use_cases.generate_report import GenerateMonitorReport
 # Schema declarativo (columnas + registro PANELS + filtros) -> panels_schema.py.
 from apps.web.routers.panels_schema import (  # noqa: E402
     PANELS, PANEL_ORDER, CCY_FILTER_PANELS, SETTLE_FILTER_PANELS,
-    LEY_FILTER_PANELS, _HL_COL_KEY,
+    LEY_FILTER_PANELS, HISTORY_TYPES, _HL_COL_KEY,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,6 +103,7 @@ def _ci_metrics(panel_id: str, request: Request, hist_provider,
         get_repo(), ci_provider,
         indices=getattr(app_state, "indices", None),
         fx=getattr(app_state, "fx", None),
+        history_types=HISTORY_TYPES, cached_history_only=True,
     ).execute(list(types), settle_date=date.today(), settle_lag=0)
     with _CI_METRICS_LOCK:
         # Purgar entradas de revisiones anteriores (revision es monótonamente creciente).
@@ -184,7 +185,8 @@ def panel_rows(panel_id: str, request: Request, settle: str = "24", state=Depend
         rows = _build_rows(panel_id, state, provider)
     return _TEMPLATES.TemplateResponse(
         request, "fragments/panel_rows.html",
-        {"rows": rows, "ncols": len(cols)},
+        {"rows": rows, "ncols": len(cols),
+         "bond_lag": 0 if settle.upper() == "CI" and panel_id in SETTLE_FILTER_PANELS else 1},
     )
 
 

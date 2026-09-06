@@ -17,26 +17,14 @@ _BONARES_COLS = [
     {"key": "change_pct", "label": "%Día", "kind": "percent_signed", "decimals": 2},
     {"key": "volume", "label": "Vol $", "kind": "volume"},
 ]
-# Soberanos USD (Bonares/Globales) + Bopreales: igual que _BONARES_COLS pero con
-# las ventanas de rendimiento (Sem/1M/3M/YTD/1A) tras %Día, alimentadas por el
-# store de precios (price_history.py: Data912 historical + acumulación del feed).
-# Dólar Linked sigue usando _BONARES_COLS (su histórico recién acumula con el tiempo).
-_SOBERANO_USD_COLS = [
-    *_BONARES_COLS[:-1],  # Ticker…%Día (todo menos "Vol $")
-    {"key": "var_7d", "label": "Sem", "kind": "percent_signed", "decimals": 2},
-    {"key": "var_30d", "label": "1M", "kind": "percent_signed", "decimals": 2},
-    {"key": "var_90d", "label": "3M", "kind": "percent_signed", "decimals": 2},
-    {"key": "var_ytd", "label": "YTD", "kind": "percent_signed", "decimals": 2},
-    {"key": "var_1y", "label": "1A", "kind": "percent_signed", "decimals": 2},
-    _BONARES_COLS[-1],    # "Vol $" al final
+_BOPREALES_COLS = [
+    c for c in _BONARES_COLS if c["key"] not in {"days_next_coupon", "technical_value"}
 ]
 _CER_COLS = [
     {"key": "ticker", "label": "Ticker", "kind": "text"},
     {"key": "category", "label": "Categoría", "kind": "text"},
     {"key": "vto", "label": "Vto", "kind": "date"},
-    {"key": "days_next_coupon", "label": "Próx Cup", "kind": "number", "decimals": 0},
     {"key": "price", "label": "Precio", "kind": "number", "decimals": 2},
-    {"key": "technical_value", "label": "V.Téc", "kind": "number", "decimals": 2},
     {"key": "parity", "label": "Paridad", "kind": "percent", "decimals": 2},
     {"key": "tir", "label": "TIR", "kind": "percent", "decimals": 2},
     {"key": "duration", "label": "DM", "kind": "number", "decimals": 2},
@@ -115,7 +103,7 @@ _BEI_TABLE_KEY = {"bei_tenor": "tenor", "bei_sendero": "sendero"}
 PANELS = {
     "bonares": ("BONARES Y GLOBALES", {"BONAR", "GLOBAL"},
                 [c for c in _BONARES_COLS if c["key"] != "technical_value"]),
-    "bopreales": ("BOPREALES", {"BOPREAL"}, _SOBERANO_USD_COLS),
+    "bopreales": ("BOPREALES", {"BOPREAL"}, _BOPREALES_COLS),
     "cer": ("BONOS CER", {"CER", "LECER", "BONCER", "BONCER ZC", "CON CUPON", "STEP-UP"}, _CER_COLS),
     "tasa_fija": ("TASA FIJA", {"LECAP", "BONCAP", "BONOFIJA"}, _TASA_FIJA_COLS),
     "dolar_linked": ("DOLAR LINKED", {"DOLAR_LINKED"}, _BONARES_COLS),
@@ -128,6 +116,14 @@ PANELS = {
 PANEL_ORDER = ["bonares", "cer", "tasa_fija", "tamar", "dolar_linked", "bopreales",
                "panel_lider", "futuros",
                "bei_tenor", "bei_sendero"]
+
+# Fetch historical returns only for instrument types with an active consumer.
+HISTORY_TYPES = frozenset(
+    kind for pid in PANEL_ORDER
+    if any(c["key"] in {"var_7d", "var_30d", "var_90d", "var_ytd", "var_1y"}
+           for c in PANELS[pid][2])
+    for kind in PANELS[pid][1]
+)
 
 # Paneles cuyas especies cotizan en 3 monedas (mismo bono): se les agrega el filtro
 # ARS/MEP/CABLE en el header (default MEP). La moneda se deriva del sufijo del ticker

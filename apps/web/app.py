@@ -5,7 +5,8 @@
   - Motor financiero (pricing core Strategy/Protocol) vía GenerateMonitorReport.
   - Puente CPU: `await asyncio.to_thread(use_case.execute, ...)` corre el pricing
     pesado fuera del event loop; `_bei_loop` hace lo mismo con compute_bei_tables.
-  - lifespan: 2 loops supervisados (`refresh` 5s, `bei` 300s) + `_startup_reconcile`
+  - lifespan: loops supervisados (`refresh`, `bei`, `history` si hay consumidor)
+    + `_startup_reconcile`
     (1×) — ver `supervisor.py`.
   - ResilientClient + ProviderHub (async) en app.state: fuente live + piso Data912.
 
@@ -36,6 +37,7 @@ from apps.web.deps import get_bondterminal, get_repo, get_state
 from apps.web.routers import (
     abm, auth as auth_router, bonds, header, panels, personal, stream, users_abm,
 )
+from apps.web.routers.panels_schema import HISTORY_TYPES
 from apps.web.state import AppState
 from apps.web.supervisor import supervise
 from config.settings import settings
@@ -64,8 +66,11 @@ async def _refresh_loop(app: FastAPI) -> None:
 
     repo = get_repo()
     provider = HubMarketDataProvider(app.state.hub, app.state.provider)
+    first = True
     while True:
-        await asyncio.sleep(settings.refresh_sec)
+        if not first:
+            await asyncio.sleep(settings.refresh_sec)
+        first = False
         try:
             _t0 = time.perf_counter()
             await app.state.hub.refresh_all()  # fuente live activa (BYMA/Data912), async
@@ -75,7 +80,9 @@ async def _refresh_loop(app: FastAPI) -> None:
                 await app.state.fx.prefetch(app.state.client)
             _t_ingest = time.perf_counter()
             use_case = GenerateMonitorReport(repo, provider,
-                                             indices=app.state.indices, fx=app.state.fx)
+                                             indices=app.state.indices, fx=app.state.fx,
+                                             history_types=HISTORY_TYPES,
+                                             cached_history_only=True)
             metrics = await asyncio.to_thread(use_case.execute, _ALL_TYPES)
             await app.state.app_state.update(metrics)   # dispara el SSE `refresh`
             _total = time.perf_counter() - _t0
@@ -96,6 +103,36 @@ async def _refresh_loop(app: FastAPI) -> None:
             # Observabilidad (O1): registrar el fallo para que el header lo muestre.
             # La app sigue sirviendo el último snapshot bueno (stale), pero visible.
             await app.state.app_state.record_error(f"{type(e).__name__}: {e}")
+
+
+async def _wait_for_first_refresh(app: FastAPI) -> None:
+    state = app.state.app_state
+    while not state.last_refresh:
+        await state.wait_for_change(state.revision)
+
+
+async def _history_loop(app: FastAPI) -> None:
+    """Warm optional returns after prices are published; never delay a refresh."""
+    from core.use_cases.generate_report import GenerateMonitorReport
+
+    state = app.state.app_state
+    use_case = GenerateMonitorReport(get_repo(), app.state.provider)
+    await _wait_for_first_refresh(app)
+    while True:
+        tickers = {
+            m.snapshot.instrument.ticker for m in state.metrics()
+            if m.snapshot.instrument.instrument_type in HISTORY_TYPES
+        }
+        for ticker in sorted(tickers):
+            try:
+                # One ticker per await also bounds work still running at shutdown.
+                await asyncio.to_thread(use_case.prefetch_history, ticker)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.warning("History warmup failed for %s", ticker, exc_info=True)
+        # Bases are cached per day; revisit for new instruments and date rollover.
+        await asyncio.sleep(300)
 
 
 
@@ -173,7 +210,7 @@ def _backfill_legs() -> int:
 
 
 async def _startup_reconcile(app: FastAPI) -> None:
-    """Al arranque: trae un snapshot de Data912 y reconcilia el catálogo —
+    """Al arranque: usa el primer snapshot del refresh y reconcilia el catálogo —
     completa las patas de moneda (MEP/CABLE) de soberanos ya cargados (mismo bono)
     y da de alta las acciones como categoría 'Acciones'. Los tickers de renta fija
     genuinamente nuevos quedan para el alta manual (sidebar del ABM)."""
@@ -183,7 +220,7 @@ async def _startup_reconcile(app: FastAPI) -> None:
     from core.infrastructure.byma.universe import ingest_byma_catalog
 
     try:
-        await app.state.hub.refresh_all()
+        await _wait_for_first_refresh(app)
         n = await asyncio.to_thread(_reconcile_catalog, app.state.hub)
         # ISIN + metadata BYMA (emisor/tipo): primero del seed (instantáneo), luego
         # ficha en vivo para los que quedaron sin ISIN (autoritativo, AL30/DICP/etc).
@@ -233,19 +270,17 @@ async def _bei_loop(app: FastAPI) -> None:
     repo = get_repo()
     bcra = app.state.indices
     provider = HubMarketDataProvider(app.state.hub, app.state.provider)
+    await _wait_for_first_refresh(app)
     first = True
     while True:
         if not first:
             await asyncio.sleep(settings.bei_refresh_sec)
         first = False
         try:
-            await app.state.hub.refresh_all()  # snapshot fresco (la 1ª corrida es en startup)
-            if hasattr(app.state.indices, "prefetch"):
-                await app.state.indices.prefetch(app.state.client)
-            if hasattr(app.state.fx, "prefetch"):
-                await app.state.fx.prefetch(app.state.client)
+            # The refresh loop owns market ingestion, including the shared indices/FX.
             use_case = GenerateMonitorReport(repo, provider,
-                                             indices=app.state.indices, fx=app.state.fx)
+                                             indices=app.state.indices, fx=app.state.fx,
+                                             history_types=())
             tables = await asyncio.to_thread(
                 compute_bei_tables, use_case=use_case, indices_provider=bcra)
             app.state.app_state.set_bei(tables)
@@ -334,17 +369,17 @@ async def lifespan(app: FastAPI):
     if not os.environ.get("MONITOR_DISABLE_LOOPS"):
         _on_crash = _crash_reporter(app)
         # `_startup_reconcile` NO se supervisa: corre una vez y terminar es su contrato.
-        # Los otros dos son `while True` — si terminan, es una caída (ver supervisor.py).
+        # Los otros loops son `while True`: terminar es una caida (ver supervisor.py).
         tasks = [asyncio.create_task(_startup_reconcile(app))]
+        loop_specs = [("refresh", _refresh_loop), ("bei", _bei_loop)]
+        if HISTORY_TYPES:
+            loop_specs.append(("history", _history_loop))
         tasks += [
             asyncio.create_task(
                 supervise(name, lambda fn=fn: fn(app), stopping=stopping,
                           on_crash=_on_crash),
                 name=f"loop:{name}")
-            for name, fn in (
-                ("refresh", _refresh_loop),
-                ("bei", _bei_loop),
-            )
+            for name, fn in loop_specs
         ]
     try:
         yield

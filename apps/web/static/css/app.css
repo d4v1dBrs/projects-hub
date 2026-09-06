@@ -246,7 +246,7 @@ button[type="submit"]:hover, .btn:hover { filter: brightness(1.08); }
 /* ---- modal (popup detalle) ---- */
 #modal:empty { display: none; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
-                 align-items: flex-start; justify-content: center; z-index: 500; padding: 26px 18px; overflow: auto; }
+                 align-items: flex-start; justify-content: center; z-index: 1100; padding: 26px 18px; overflow: auto; }
 .modal-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px;
               width: min(1280px, 94vw); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px;

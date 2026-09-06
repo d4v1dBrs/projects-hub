@@ -501,7 +501,7 @@ _ALL_BOND_COLS = [
 ]
 
 _SHARE_DROP_COLS = {"bonares": {"tna", "tem", "technical_value", "dias"},
-                    "bopreales": {"tna", "tem", "technical_value", "dias"},
+                    "bopreales": {"tna", "tem", "technical_value", "dias", "days_next_coupon"},
                     "cer": {"tna", "tem", "technical_value", "days_next_coupon"}}
 
 

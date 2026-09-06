@@ -1,7 +1,7 @@
 import logging
 import threading
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Collection, Dict, List, Optional, Tuple
 
 from core.domain.interfaces import IInstrumentsRepository, IMarketDataProvider
 from core.domain.models import Instrument, InstrumentMetrics, MarketSnapshot
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 _HIST_BASE_CACHE: Dict[Tuple[str, date], Tuple] = {}
 _HIST_BASE_CACHE_DAY: Optional[date] = None
 _HIST_BASE_LOCK = threading.Lock()
+_EMPTY_HIST_BASES = (None, None, None, None, None)
 
 
 def _asof_price(series: dict, target: date, tol_days: Optional[int] = None) -> Optional[float]:
@@ -39,7 +40,7 @@ def _asof_price(series: dict, target: date, tol_days: Optional[int] = None) -> O
     return series[best]
 
 
-def _hist_bases(ticker: str, today: date, provider) -> Tuple:
+def _hist_bases(ticker: str, today: date, provider, *, cached_only: bool = False) -> Tuple:
     """Precios de referencia históricos (Sem/1M/3M/YTD/1A) para `ticker` en `today`.
 
     Memoizado por (ticker, today): dentro del mismo día el dato no cambia (los
@@ -53,6 +54,8 @@ def _hist_bases(ticker: str, today: date, provider) -> Tuple:
             _HIST_BASE_CACHE_DAY = today
         if cache_key in _HIST_BASE_CACHE:
             return _HIST_BASE_CACHE[cache_key]
+    if cached_only:
+        return _EMPTY_HIST_BASES
 
     # Compute outside the lock — provider call is safe to run concurrently.
     # days=400 acota a ~13 meses (cubre 1A=365d + la tolerancia de 12d).
@@ -67,8 +70,10 @@ def _hist_bases(ticker: str, today: date, provider) -> Tuple:
     px_1y = _asof_price(hist, today - timedelta(days=365), tol_days=12)
     result = (px_7d, px_30d, px_90d, px_ytd, px_1y)
 
-    with _HIST_BASE_LOCK:
-        _HIST_BASE_CACHE[cache_key] = result
+    # Providers return empty series on outages too; let the background loop retry.
+    if any(value is not None for value in result):
+        with _HIST_BASE_LOCK:
+            _HIST_BASE_CACHE[cache_key] = result
     return result
 
 
@@ -77,7 +82,9 @@ class GenerateMonitorReport:
                  instruments_repo: IInstrumentsRepository,
                  market_provider: IMarketDataProvider,
                  indices: Optional[object] = None,
-                 fx: Optional[object] = None):
+                 fx: Optional[object] = None,
+                 *, history_types: Optional[Collection[str]] = None,
+                 cached_history_only: bool = False):
         self.repo = instruments_repo
         self.provider = market_provider
         # Los singletons de app.state se inyectan aquí para evitar reinstanciar
@@ -85,6 +92,13 @@ class GenerateMonitorReport:
         # Si no se inyectan, se crean con el mismo default que antes (retro-compat).
         self._indices = indices
         self._fx = fx
+        # None preserves synchronous callers; the web reads history from cache only.
+        self._history_types = None if history_types is None else frozenset(history_types)
+        self._cached_history_only = cached_history_only
+
+    def prefetch_history(self, ticker: str) -> None:
+        """Warm daily reference prices outside the live-pricing path."""
+        _hist_bases(ticker, date.today(), self.provider)
 
     def execute(self, instrument_types: List[str],
                 settle_date: Optional[date] = None,
@@ -163,9 +177,6 @@ class GenerateMonitorReport:
         # consolidated execute(). Return None on failure; execute() already
         # filters Nones out of the result list.
         try:
-            today = date.today()
-            bases = _hist_bases(inst.ticker, today, self.provider)
-
             # Pricing snapshot: para la pata ARS de un soberano usamos el precio
             # USD implícito (pesos ÷ MEP/CABLE) → TIR/V.Téc/MD/paridad correctas.
             # `snapshot` (precio en pesos) se conserva para el display del panel.
@@ -191,6 +202,14 @@ class GenerateMonitorReport:
                 metrics.duration = FinancialEngine.calculate_duration(
                     pricing_snap, metrics.tir, settle_date=settle_date)
 
+            bases = _EMPTY_HIST_BASES
+            if self._history_types is None or inst.instrument_type in self._history_types:
+                try:
+                    bases = _hist_bases(inst.ticker, date.today(), self.provider,
+                                        cached_only=self._cached_history_only)
+                except Exception:
+                    # An optional history outage must never hide the current quote.
+                    logger.warning("Historical bases unavailable for %s", inst.ticker, exc_info=True)
             px_7d, px_30d, px_90d, px_ytd, px_1y = bases
             metrics.variance_7d = FinancialEngine.calculate_pct_change(snapshot.price, px_7d)
             metrics.variance_30d = FinancialEngine.calculate_pct_change(snapshot.price, px_30d)
