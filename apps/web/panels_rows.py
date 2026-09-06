@@ -138,6 +138,26 @@ def _cell_class(value, kind: str) -> str:
     return ""
 
 
+def _panel_cell(value, column: dict, decimals: Optional[int] = None) -> dict:
+    """Formato compartido y valor numerico para el blink de todos los paneles."""
+    kind, key = column["kind"], column["key"]
+    blink_value = None
+    if (kind in ("number", "percent", "percent_signed", "volume")
+            and key not in ("dias", "dias_mes", "days_next_coupon")):
+        try:
+            number = float(value)
+            if math.isfinite(number):
+                blink_value = number
+        except (TypeError, ValueError, OverflowError):
+            pass
+    return {
+        "text": _fmt(value, kind, column.get("decimals", 2) if decimals is None else decimals),
+        "cls": _cell_class(value, kind),
+        "key": key,
+        "blink_value": blink_value,
+    }
+
+
 # ── Builders de filas ────────────────────────────────────────────────────────
 
 def _build_panel_lider_rows(provider) -> List[dict]:
@@ -157,8 +177,7 @@ def _build_panel_lider_rows(provider) -> List[dict]:
         mid = ((s.bid + s.ask) / 2.0) if (s.bid and s.ask) else (s.price or None)
         raw = {"ticker": tk, "bid": s.bid, "ask": s.ask, "mid": mid,
                "change_pct": s.change_pct, "volume": s.volume, "operations": s.operations}
-        cells = [{"text": _fmt(raw[c["key"]], c["kind"], c.get("decimals", 2)),
-                  "cls": _cell_class(raw[c["key"]], c["kind"])} for c in _PANEL_LIDER_COLS]
+        cells = [_panel_cell(raw[c["key"]], c) for c in _PANEL_LIDER_COLS]
         rows.append({"ticker": tk, "cells": cells, "clickable": False})
     return rows
 
@@ -191,8 +210,7 @@ def _build_futuros_rows(rofex, fx, bcra, today: Optional[date] = None) -> List[d
             "tna": tna * 100 if tna is not None else None,
             "open_interest": q.get("open_interest"), "volume": q.get("volume"),
         }
-        cells = [{"text": _fmt(raw[c["key"]], c["kind"], c.get("decimals", 2)),
-                  "cls": _cell_class(raw[c["key"]], c["kind"])} for c in _FUTUROS_COLS]
+        cells = [_panel_cell(raw[c["key"]], c) for c in _FUTUROS_COLS]
         rows.append({"ticker": sym, "cells": cells, "clickable": False})
     return rows
 
@@ -322,8 +340,7 @@ def _build_bei_rows(panel_id: str, state) -> List[dict]:
             raw = r.get(c["key"])
             if c["kind"] in ("percent", "percent_signed") and raw is not None:
                 raw = raw * 100
-            cells.append({"text": _fmt(raw, c["kind"], c.get("decimals", 2)),
-                          "cls": _cell_class(raw, c["kind"])})
+            cells.append(_panel_cell(raw, c))
         rows.append({"ticker": r.get(cols[0]["key"]), "cells": cells, "clickable": False})
     return rows
 
@@ -385,14 +402,10 @@ def _build_rows(panel_id: str, state, provider=None, cols_override=None,
             dec = c.get("decimals", 2)
             if c["key"] == "price" and ccy == "ARS":
                 dec = 0
-            cls = _cell_class(raw, c["kind"])
+            cell = _panel_cell(raw, c, dec)
             if hl_key and c["key"] == hl_key:
-                cls = (cls + " tircol").strip()
-            cells.append({
-                "text": _fmt(raw, c["kind"], dec),
-                "cls": cls,
-                "key": c["key"],   # data-key en el td → el blip de precio lo localiza
-            })
+                cell["cls"] = (cell["cls"] + " tircol").strip()
+            cells.append(cell)
         row = {"ticker": vals["ticker"], "cells": cells}
         if ccy is not None:
             row["ccy"] = ccy

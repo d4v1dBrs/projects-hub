@@ -189,10 +189,10 @@ tbody tr:hover { background: var(--row-hover); }
 tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12px; }
 td.pos { color: var(--pos); } td.neg { color: var(--neg); }
 
-/* ---- blip de precio (estilo terminal de trading: Bloomberg) -------------- */
-/* La celda de precio destella verde (suba) / rojo (baja) cuando el valor cambia
-   entre refreshes y se apaga rápido. El JS (index.html) compara el precio nuevo
-   vs el previo por ticker y agrega .blip-up / .blip-down a la celda. Tinte por
+/* ---- blink de cifras (todos los paneles) -------------------------------- */
+/* La celda destella verde (suba) / rojo (baja) cuando el valor cambia
+   entre refreshes y se apaga rapido. El JS (index.html) compara cada cifra
+   por panel/plazo/fila/columna y agrega .blip-up / .blip-down. Tinte por
    tema: fuerte al pico, breve hold, fade a transparente revelando la fila. */
 :root { --blip-up: rgba(13,110,58,.55); --blip-down: rgba(168,36,43,.5);
         --blip-up-ring: rgba(13,110,58,.95); --blip-down-ring: rgba(168,36,43,.9); }
