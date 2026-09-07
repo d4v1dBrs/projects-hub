@@ -95,14 +95,26 @@
     });
 
     var initialState = defaultState;
+    var storedStateRaw = null;
+    var storedStateInvalid = false;
     try {
-      var storedState = validateState(
-        JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"),
-        panelIds,
-        columns
-      );
-      if (storedState) initialState = storedState;
-    } catch (error) {}
+      storedStateRaw = localStorage.getItem(STORAGE_KEY);
+      if (storedStateRaw !== null) {
+        var storedState = validateState(JSON.parse(storedStateRaw), panelIds, columns);
+        if (storedState) initialState = storedState;
+        else storedStateInvalid = true;
+      }
+    } catch (error) {
+      storedStateInvalid = storedStateRaw !== null;
+    }
+    if (storedStateInvalid) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (error) {}
+      if (global.console && typeof global.console.warn === "function") {
+        global.console.warn("Dashboard de bonos: layout local inválido; se restauró el default.");
+      }
+    }
 
     if (!GridStack.Utils.__bonosResizeScrollDisabled) {
       GridStack.Utils.__bonosResizeScrollDisabled = true;

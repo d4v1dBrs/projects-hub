@@ -424,6 +424,9 @@ th.tircol, td.tircol { background: var(--tir-hl); }
 .grid-stack-item.layout-collision .grid-stack-item-content {
   outline-color: var(--neg); box-shadow: inset 0 0 0 2px var(--neg);
 }
+.grid-stack:not(.layout-editing) .panel-head {
+  -webkit-user-select: none; user-select: none;
+}
 .grid-stack:not(.layout-editing) > .grid-stack-item .ui-resizable-handle { display: none !important; }
 .grid-stack:not(.layout-editing) .ph-x { display: none; }
 .grid-stack.layout-editing .ph-x { display: inline-flex; }
@@ -436,6 +439,18 @@ th.tircol, td.tircol { background: var(--tir-hl); }
 .grid-stack.layout-editing > .grid-stack-item > .ui-resizable-se::after {
   content: ""; position: absolute; right: 5px; bottom: 5px; width: 9px; height: 9px;
   border-right: 3px solid var(--accent); border-bottom: 3px solid var(--accent);
+}
+@media (max-width: 1500px) {
+  .grid-stack .panel-head { padding-left: 6px; padding-right: 6px; gap: 3px; }
+  .grid-stack .panel-head .ph-title { min-width: 56px; }
+  .grid-stack .ph-tools { gap: 1px; }
+  .grid-stack .ph-btn,
+  .grid-stack .ccy-btn,
+  .grid-stack .ley-btn { padding-left: 3px; padding-right: 3px; }
+  .grid-stack .ccy-filter,
+  .grid-stack .ley-filter { gap: 0; margin-left: 0; margin-right: 0; }
+  .grid-stack .settle-toggle { min-width: 32px; padding-left: 3px; padding-right: 3px; }
+  .grid-stack.layout-editing .ph-cam { display: none; }
 }
 /* En modo normal ningún handle cubre la tabla. El scrollbar conserva un área de
    agarre cómoda y el resize sólo aparece durante la edición explícita. */
