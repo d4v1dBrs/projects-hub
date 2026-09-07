@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=20260906d">
     <!-- Apache ECharts -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@6.1.0/dist/echarts.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -19,9 +19,7 @@
             <div class="menu-icon"><i class="fas fa-bars"></i></div>
             <div class="nav-links">
                 <a href="{{ url_for('resume') }}" class="nav-link active">Dashboard (Resumen)</a>
-                <a href="{{ url_for('projects') }}" class="nav-link">Proyectos: Coding</a>
                 <a href="{{ url_for('index') }}" class="nav-link">Bonos Argy</a>
-                <a href="{{ url_for('login_page') }}" class="nav-link">Admin</a>
             </div>
         </nav>
 
@@ -31,25 +29,19 @@
             <aside class="sidebar panel">
                 <div class="profile-header">
                     <h1 class="name">David<br>Berisso<br>Quintana</h1>
-                    <h2 class="title">Head of Sales & Trading</h2>
+                    <h2 class="title">Head of Sales & Trading Strategy · Productores</h2>
                     <h3 class="location">Buenos Aires, AR</h3>
                     
                     <div class="social-icons">
-                        <a href="#"><i class="fas fa-mobile-alt"></i></a>
-                        <a href="mailto:david.berisso@outlook.com"><i class="far fa-envelope"></i></a>
-                        <a href="https://linkedin.com/in/davidberisso" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="tel:+541123957692" aria-label="Llamar a David"><i class="fas fa-mobile-alt"></i></a>
+                        <a href="mailto:david.berisso@outlook.com" aria-label="Enviar un email a David"><i class="far fa-envelope"></i></a>
+                        <a href="https://linkedin.com/in/davidberisso" target="_blank" rel="noreferrer" aria-label="Ver el perfil de LinkedIn de David"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
 
                 <div class="profile-bio">
-                    <p>12 years operating Argentine market, 11 teaching finance. Head of Sales & Trading @ Balanz Capital, covering institutional clients (ALyCs, Banks). Professor UCA (MBA, Posgrado) & UBA. Expert in Fixed Income, Derivatives, Portfolio Management, using Python for data analysis, connected to Refinitiv EIKON and local APIs.</p>
-                </div>
-                
-                <!-- Spacer for aesthetic mirroring -->
-                <div class="bio-separator"></div>
-
-                <div class="profile-bio bottom-bio">
-                    <p>12 years operating Argentine market, 11 teaching finance. Head of Sales & Trading @ Balanz Capital, covering institutional clients (ALyCs, Banks). Professor UCA (MBA, Posgrado) & UBA. Redtamic Expert finacin Fixed Income, Derivatives, Portfolio Management, using Python for data analysis, connected to Refinitiv EIKON and local APIs.</p>
+                    <p>Opero el mercado argentino desde hace 12 años y enseño finanzas desde hace 11. Lidero la Mesa de Sales & Trading Strategy · Productores en Balanz Capital, con cobertura institucional a ALYCs, Agentes de Negociación, Productores y Bancos.</p>
+                    <p>En UCA y UBA enseño Mercado de Capitales, Finanzas Corporativas, Derivados y Gestión de Carteras. También desarrollo herramientas en Python para renta fija, optimización de carteras y monitoreo de curvas.</p>
                 </div>
             </aside>
 
@@ -57,11 +49,52 @@
             <div class="content-area">
                 <!-- Top Row (Timeline) -->
                 <section class="panel timeline-panel">
-                    <div class="panel-header">
-                        <h3>Impressive Career Timeline (Visualization)</h3>
-                        <div class="panel-controls"><i class="fas fa-expand"></i></div>
+                    <div class="panel-header timeline-header">
+                        <div>
+                            <h3>Trayectoria y mercado argentino</h3>
+                            <p id="marketViewSubtitle">Pasá el cursor —o tocá— sobre un puesto o evento. En pantallas angostas, deslizá para recorrer los años.</p>
+                        </div>
+                        <div class="market-view-actions">
+                            <div class="market-view-tabs" role="tablist" aria-label="Vista principal de trayectoria y mercado">
+                                <button class="market-view-tab" id="timelineTab" type="button" role="tab" aria-selected="true" aria-controls="timelineView" data-market-view="timeline">Timeline</button>
+                                <button class="market-view-tab" id="mervalTab" type="button" role="tab" aria-selected="false" aria-controls="mervalView" data-market-view="merval">Merval USD CCL</button>
+                            </div>
+                            <button class="panel-control-button" id="marketExpandButton" type="button" aria-label="Abrir vista completa" title="Abrir vista completa">
+                                <i class="fas fa-expand" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="chart-container" id="timelineChart"></div>
+
+                    <div class="market-tab-view" id="timelineView" role="tabpanel" aria-labelledby="timelineTab">
+                        <div class="timeline-layout-shell">
+                            <div class="timeline-legend" aria-label="Referencias del timeline">
+                                <span><i class="timeline-legend__line timeline-legend__line--career"></i>Carrera en mercados</span>
+                                <span><i class="timeline-legend__line timeline-legend__line--uba"></i>Docencia UBA</span>
+                                <span><i class="timeline-legend__line timeline-legend__line--uca"></i>Docencia UCA</span>
+                                <span><i class="timeline-legend__line timeline-legend__line--market"></i>Mercado argentino</span>
+                                <details class="timeline-text-details" id="timelineTextDetails">
+                                    <summary>Ver responsabilidades y eventos en texto</summary>
+                                    <div class="timeline-text-content" id="timelineTextContent"></div>
+                                </details>
+                            </div>
+                            <div class="timeline-content-shell">
+                                <div class="timeline-scroll">
+                                    <div class="chart-container" id="timelineChart"></div>
+                                </div>
+                                <div class="timeline-tooltip-portal" id="timelineTooltipPortal" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="market-tab-view merval-view" id="mervalView" role="tabpanel" aria-labelledby="mervalTab" hidden>
+                        <div class="merval-chart-shell">
+                            <div class="chart-container merval-chart" id="mervalChart"></div>
+                            <div class="merval-detail" aria-live="polite">
+                                <span class="merval-detail__date">Ago–Oct 2019</span>
+                                <span class="merval-detail__copy">PASO, caída récord del Merval en dólares y reperfilamiento de deuda local.</span>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Bottom Row (3 Columns) -->
@@ -69,7 +102,7 @@
                     <!-- Tech Node Graph -->
                     <section class="panel node-panel">
                         <div class="panel-header">
-                            <h3>Modern Tech Stack Node Graph</h3>
+                            <h3>Stack tecnológico</h3>
                             <div class="panel-controls"><i class="fas fa-expand"></i></div>
                         </div>
                         <div class="chart-container" id="nodeChart"></div>
@@ -78,7 +111,7 @@
                     <!-- Skills Matrix -->
                     <section class="panel radar-panel">
                         <div class="panel-header">
-                            <h3>Skills Matrix</h3>
+                            <h3>Matriz de habilidades</h3>
                             <div class="panel-controls"><i class="fas fa-expand"></i></div>
                         </div>
                         <div class="chart-container" id="radarChart"></div>
@@ -87,39 +120,39 @@
                     <!-- Languages & Certifications -->
                     <section class="panel extra-panel">
                         <div class="panel-section">
-                            <h3>Languages</h3>
+                            <h3>Idiomas</h3>
                             <div class="lang-bar">
                                 <div class="lang-label">
                                     <span>Español</span>
-                                    <span class="muted">Native</span>
+                                    <span class="muted">Nativo</span>
                                 </div>
                                 <div class="progress-bar"><div class="fill" style="width: 100%;"></div></div>
                             </div>
                             <div class="lang-bar">
                                 <div class="lang-label">
                                     <span>Inglés</span>
-                                    <span class="muted">Full Professional</span>
+                                    <span class="muted">Profesional completo</span>
                                 </div>
                                 <div class="progress-bar"><div class="fill" style="width: 90%;"></div></div>
                             </div>
                             <div class="lang-bar">
                                 <div class="lang-label">
                                     <span>Alemán</span>
-                                    <span class="muted">Elementary</span>
+                                    <span class="muted">Básico</span>
                                 </div>
                                 <div class="progress-bar"><div class="fill" style="width: 25%;"></div></div>
                             </div>
                             <div class="lang-bar">
                                 <div class="lang-label">
                                     <span>Francés</span>
-                                    <span class="muted">Elementary</span>
+                                    <span class="muted">Básico</span>
                                 </div>
                                 <div class="progress-bar"><div class="fill" style="width: 20%;"></div></div>
                             </div>
                         </div>
 
                         <div class="panel-section certifications">
-                            <h3>Certifications</h3>
+                            <h3>Certificaciones</h3>
                             <ul class="cert-list">
                                 <li>
                                     <i class="fab fa-r-project cert-icon"></i>
@@ -149,7 +182,21 @@
         </div>
     </div>
 
+    <dialog class="market-dialog" id="marketChartDialog" aria-labelledby="marketDialogTitle">
+        <header class="market-dialog__header">
+            <div>
+                <h2 id="marketDialogTitle">Vista completa</h2>
+                <p id="marketDialogSubtitle"></p>
+            </div>
+            <button class="market-dialog__close" id="marketDialogClose" type="button" aria-label="Cerrar vista completa">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </header>
+        <div class="market-dialog__chart-host" id="marketDialogChartHost"></div>
+    </dialog>
+
     <!-- ECharts Implementation -->
-    <script src="{{ url_for('static', path='js/main.js') }}"></script>
+    <script src="{{ url_for('static', path='js/main.js') }}?v=20260906c"></script>
+    <script src="{{ url_for('static', path='js/merval_chart.js') }}?v=20260906c"></script>
 </body>
 </html>

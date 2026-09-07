@@ -93,14 +93,49 @@ header .theme-btn:hover { color: var(--accent); }
 main { padding: 14px; display: grid; gap: 14px;
        grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); align-items: start; }
 .grid-stack { width: 100%; }
+.grid-stack:not(.dashboard-ready) { visibility: hidden; }
+.grid-stack.dashboard-fallback { display: block; height: auto !important; visibility: visible; }
+.grid-stack.dashboard-fallback > .grid-stack-item {
+  position: relative !important; inset: auto !important; display: block !important;
+  width: auto !important; height: 420px !important; min-height: 320px;
+  margin: 0 0 14px;
+}
+.grid-stack.dashboard-fallback > .grid-stack-item > .grid-stack-item-content {
+  position: relative !important; inset: auto !important;
+  width: 100% !important; height: 100% !important;
+}
+
+.layout-edit-bar { position: sticky; top: var(--header-height, 0); z-index: 25;
+                   display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 8px 8px 0;
+                   padding: 8px 12px; color: var(--text); background: var(--panel-bg);
+                   border: 1px solid var(--accent); border-radius: var(--radius);
+                   box-shadow: var(--shadow-panel); }
+.layout-edit-bar[hidden] { display: none; }
+.layout-edit-bar strong { color: var(--accent); white-space: nowrap; }
+#layout-edit-status { color: var(--text-dim); }
+#layout-edit-status.is-error { color: var(--neg); }
+.layout-edit-actions { display: inline-flex; gap: 6px; margin-left: auto; }
+.layout-edit-actions button { padding: 5px 10px; border: 1px solid var(--panel-border);
+                              border-radius: 4px; color: var(--text); background: var(--head-bg);
+                              cursor: pointer; font: 600 11.5px var(--font-body); }
+.layout-edit-actions button:hover { border-color: var(--accent); color: var(--accent); }
+#layout-apply { border-color: var(--accent); color: #fff; background: var(--accent); }
+#layout-apply:hover { color: #fff; filter: brightness(1.08); }
 
 /* ---- panel ---- */
 .panel { background: var(--panel-bg); border: 1px solid var(--panel-border);
          border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-panel); }
 .panel-head { padding: 8px 12px; background: var(--panel-bg); color: var(--text);
               font-weight: 600; font-size: 13px; letter-spacing: .2px;
-              display: flex; align-items: center; justify-content: space-between; cursor: grab; gap: 8px; border-bottom: 1px solid var(--panel-border); }
+              display: flex; align-items: center; justify-content: space-between; cursor: default; gap: 8px; border-bottom: 1px solid var(--panel-border); }
 .panel-head .ph-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+.layout-drag-handle { display: none; align-items: center; justify-content: center;
+                      width: 30px; height: 28px; flex: 0 0 30px; padding: 0;
+                      border: 1px solid var(--accent); border-radius: 4px;
+                      color: var(--accent); background: var(--accent-light);
+                      font: 700 18px/1 var(--font-mono); }
+.grid-stack.layout-editing .layout-drag-handle { display: inline-flex; cursor: grab; }
+.grid-stack.layout-editing .layout-drag-handle:active { cursor: grabbing; }
 
 /* ---- toolbar del panel (Gráfico | Config | filtro | X) ---- */
 /* Botones con el mismo estilo que los links del nav (texto celeste, hover/activo
@@ -170,6 +205,9 @@ main { padding: 14px; display: grid; gap: 14px;
             font: 600 12px var(--font-body); letter-spacing: .2px; }
 .cfg-item:hover { background: var(--row-hover); }
 .cfg-item.on { background: var(--accent); color: #fff; }
+.panel-config-menu .cfg-item:disabled { opacity: .48; cursor: not-allowed; }
+.panel-config-menu .cfg-item:disabled:hover { background: transparent; }
+.panel-config-menu .cfg-item.on:disabled:hover { background: var(--accent); }
 .cfg-sep { height: 1px; background: var(--panel-border); margin: 6px 4px; }
 .cfg-action { display: block; width: 100%; text-align: left; background: transparent; color: var(--accent);
               border: none; border-radius: 6px; padding: 6px 9px; cursor: pointer;
@@ -371,15 +409,36 @@ th.tircol, td.tircol { background: var(--tir-hl); }
 
 /* ---- Gridstack (paneles draggables/resizables en la home) ---- */
 .grid-stack { margin: 8px; }
+.grid-stack.layout-editing {
+  background-image:
+    linear-gradient(rgba(35, 102, 255, .10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(35, 102, 255, .10) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
 .grid-stack-item-content { overflow: hidden !important; display: flex; flex-direction: column;
                            inset: 0; border-radius: var(--radius); }
 .grid-stack-item-content.panel { padding: 0; }
 .panel-body { overflow: auto; flex: 1 1 auto; }
 .grid-stack-item-content .panel-head { flex: 0 0 auto; }
-/* El resize vive sólo en el borde derecho + esquina se (ver init en index.html),
-   así que el fondo queda libre: barra horizontal un poco más gruesa y con realce al
-   hover para agarrarla cómoda (el thumb se ve fino por el padding, pero el área de
-   agarre es de 13px). */
+.grid-stack.layout-editing .grid-stack-item-content { outline: 1px solid var(--accent); outline-offset: -1px; }
+.grid-stack-item.layout-collision .grid-stack-item-content {
+  outline-color: var(--neg); box-shadow: inset 0 0 0 2px var(--neg);
+}
+.grid-stack:not(.layout-editing) > .grid-stack-item .ui-resizable-handle { display: none !important; }
+.grid-stack:not(.layout-editing) .ph-x { display: none; }
+.grid-stack.layout-editing .ph-x { display: inline-flex; }
+.grid-stack.layout-editing > .grid-stack-item > .ui-resizable-e {
+  width: 18px; right: -4px; cursor: ew-resize;
+}
+.grid-stack.layout-editing > .grid-stack-item > .ui-resizable-se {
+  width: 26px; height: 26px; right: 0; bottom: 0; cursor: se-resize;
+}
+.grid-stack.layout-editing > .grid-stack-item > .ui-resizable-se::after {
+  content: ""; position: absolute; right: 5px; bottom: 5px; width: 9px; height: 9px;
+  border-right: 3px solid var(--accent); border-bottom: 3px solid var(--accent);
+}
+/* En modo normal ningún handle cubre la tabla. El scrollbar conserva un área de
+   agarre cómoda y el resize sólo aparece durante la edición explícita. */
 .panel-body::-webkit-scrollbar { height: 13px; width: 13px; }
 .panel-body::-webkit-scrollbar-thumb { background: var(--scroll-thumb); background-clip: padding-box;
                                        border: 3px solid transparent; border-radius: 9px; }

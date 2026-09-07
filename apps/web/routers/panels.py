@@ -13,27 +13,26 @@ FastAPI routes, dependency injection, and the CI-metrics memoization cache.
 
 from __future__ import annotations
 
-import asyncio
-import json
-import logging
-import os
 import threading
 from datetime import date
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 
 from apps.web.json_script import json_for_script
 from apps.web.deps import get_fx, get_indices, get_provider, get_repo, get_rofex, get_state
-from apps.web.deps_auth import get_current_user_html
+from apps.web.dashboard_layout import (
+    DEFAULT_DASHBOARD_STATE,
+    GRID_CELL_HEIGHT,
+    GRID_COLUMNS,
+    GRID_MARGIN,
+)
 from apps.web.templates import TEMPLATES as _TEMPLATES
 from apps.web.panels_rows import (
     _build_futuros_rows, _build_futuros_share, _build_rows, _chart_payload,
     _drop_empty_share_cols, _share_full_cols, panel_columns,
 )
-from config.settings import settings
 from core.holiday_engine import settlement_byma_date
 from core.infrastructure.provider_hub import HubMarketDataProvider
 from core.use_cases.generate_report import GenerateMonitorReport
@@ -44,25 +43,7 @@ from apps.web.routers.panels_schema import (  # noqa: E402
     LEY_FILTER_PANELS, HISTORY_TYPES, _HL_COL_KEY,
 )
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
-
-# Layout por defecto del dashboard (posiciones + paneles cerrados + columnas).
-# Se guarda junto a la .db (fuera del working tree); si no existe, el front usa el
-# auto-layout. El usuario lo setea con "Guardar como default" en el menú CONFIG.
-_LAYOUT_FILE = str(Path(str(settings.catalog_db)).parent / "dashboard_layout.json")
-
-
-def _read_default_layout() -> str:
-    """JSON del layout default escapado para embeber en <script>, o 'null'. Se
-    re-serializa (no se devuelve el archivo crudo) para neutralizar un payload
-    malicioso que un POST a /panels/layout pudiera haber guardado."""
-    try:
-        with open(_LAYOUT_FILE, "r", encoding="utf-8") as f:
-            obj = json.loads(f.read())
-        return json_for_script(obj)
-    except (OSError, ValueError):
-        return "null"
 
 
 # ── CI metrics: memoización por (revision, panel_id) ────────────────────────
@@ -127,48 +108,10 @@ def index(request: Request, state=Depends(get_state)):
     return _TEMPLATES.TemplateResponse(
         request, "pages/index.html",
         {"panels": panels, "last_refresh": state.last_refresh,
-         "default_layout": _read_default_layout()},
+         "default_layout": json_for_script(DEFAULT_DASHBOARD_STATE),
+         "grid_columns": GRID_COLUMNS, "grid_cell_height": GRID_CELL_HEIGHT,
+         "grid_margin": GRID_MARGIN},
     )
-
-
-# El layout es un archivo GLOBAL (lo ven todos los que abren /bonos): escribirlo o
-# borrarlo exige sesión, y el body se acota ANTES de parsearlo — sin cap, un POST
-# anónimo podía pisar el layout del admin o llenar el disco desde internet.
-_LAYOUT_MAX_BYTES = 64 * 1024
-
-
-@router.post("/panels/layout")
-async def save_default_layout(request: Request, _user=Depends(get_current_user_html)):
-    """Guarda el layout actual ({layout, hidden, cols}) como default del dashboard."""
-    raw = await request.body()
-    if len(raw) > _LAYOUT_MAX_BYTES:
-        return JSONResponse({"ok": False, "error": "layout too large"}, status_code=413)
-    try:
-        obj = json.loads(raw)
-    except Exception:
-        return JSONResponse({"ok": False, "error": "invalid json"}, status_code=400)
-    def _write():
-        os.makedirs(os.path.dirname(_LAYOUT_FILE), exist_ok=True)
-        with open(_LAYOUT_FILE, "w", encoding="utf-8") as f:
-            json.dump(obj, f, ensure_ascii=False)
-
-    try:
-        await asyncio.to_thread(_write)   # I/O de disco fuera del event loop
-    except OSError as e:
-        logger.warning("No se pudo guardar el layout default: %s", e)
-        return JSONResponse({"ok": False}, status_code=500)
-    logger.info("Dashboard: layout default guardado.")
-    return JSONResponse({"ok": True})
-
-
-@router.delete("/panels/layout")
-def clear_default_layout(_user=Depends(get_current_user_html)):
-    """Borra el layout default (vuelve al auto-layout)."""
-    try:
-        os.remove(_LAYOUT_FILE)
-    except OSError:
-        pass
-    return JSONResponse({"ok": True})
 
 
 @router.get("/panels/{panel_id}/rows", response_class=HTMLResponse)

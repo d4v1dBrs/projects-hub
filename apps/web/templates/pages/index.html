@@ -2,6 +2,7 @@
 {% block head %}
 <link rel="stylesheet" href="/static/vendor/gridstack/gridstack.min.css">
 <script src="/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="/static/js/dashboard_grid.js"></script>
 {# vendor LOCAL (ver base.html): antes unpkg/jsdelivr — CDN caído = página en blanco #}
 <script src="/static/vendor/htmx-ext-sse.js"></script>
 <script src="/static/vendor/chart.umd.min.js"></script>
@@ -12,9 +13,9 @@
    continuo, sin saltos discretos). El script de abajo lee COL/CELL/MARGIN del
    data-* del contenedor y genera el CSS de las COL columnas (GridStack sólo trae
    el de 12). Mantené COL múltiplo de 2 para que el medio ancho sea exacto. #}
-{% set COL = 200 %}
-{% set CELL = 5 %}
-{% set MARGIN = 5 %}
+{% set COL = grid_columns %}
+{% set CELL = grid_cell_height %}
+{% set MARGIN = grid_margin %}
 {% set DEFH = (372 / CELL) | round | int %}  {# alto por defecto = el de antes (6×62px) #}
 {% set wide = ["panel_lider", "futuros", "bei_tenor", "bei_sendero"] %}
 {# SSE (§7.4): el server pushea `refresh` cada ciclo del loop (~7s) → los paneles
@@ -24,6 +25,16 @@
    El filtro `[mrRefreshOK(this)]` (base.html) corta el refresco cuando la pestaña
    está en segundo plano o el panel está cerrado con la X: no se piden filas que
    nadie va a mirar. `tabvisible` re-sincroniza al volver a la pestaña. #}
+<div id="layout-edit-bar" class="layout-edit-bar" hidden>
+  <strong>Editando layout</strong>
+  <span id="layout-edit-status" role="status" aria-live="polite"></span>
+  <span class="layout-edit-actions">
+    <button type="button" id="layout-cancel">Cancelar</button>
+    <button type="button" id="layout-default">Default</button>
+    <button type="button" id="layout-apply">Aplicar</button>
+  </span>
+</div>
+<script id="dashboard-default-state" type="application/json">{{ default_layout|safe }}</script>
 <div class="grid-stack" data-col="{{ COL }}" data-cell="{{ CELL }}" data-margin="{{ MARGIN }}"
      hx-ext="sse" sse-connect="/stream">
   {% for p in panels %}
@@ -32,6 +43,8 @@
        gs-min-w="{{ COL // 7 }}" gs-min-h="8">
     <div class="grid-stack-item-content panel" data-id="{{ p.id }}">
       <div class="panel-head">
+        <button type="button" class="layout-drag-handle"
+                aria-label="Mover {{ p.title }}" title="Mover panel">⠿</button>
         <span class="ph-title">{{ p.title }}</span>
         <span class="ph-tools">
           {% if p.chartable %}<button type="button" class="ph-btn" data-act="chart">Gráfico</button>{% endif %}
@@ -97,11 +110,47 @@
 </div>
 <script>
   (function () {
-    if (typeof GridStack === "undefined") return;  // fallback: bloques apilados
     var el = document.querySelector(".grid-stack");
+    if (!el) return;
     var COL = parseInt(el.dataset.col, 10) || 12;
     var CELL = parseInt(el.dataset.cell, 10) || 62;
     var MARGIN = parseInt(el.dataset.margin, 10) || 7;
+    var defaultState;
+    var dashboard;
+
+    function fallbackDashboard() {
+      return {
+        grid: null,
+        lastError: null,
+        beginEdit: function () {},
+        applyEdit: function () { return false; },
+        cancelEdit: function () {},
+        previewDefault: function () { return false; },
+        setPanelVisible: function () { return false; },
+        isPanelHidden: function () { return false; },
+        isEditing: function () { return false; },
+        getState: function () { return defaultState; },
+      };
+    }
+
+    function enableSsrFallback(error) {
+      if (error) console.error("No se pudo inicializar el layout del dashboard", error);
+      el.querySelectorAll(".grid-stack-item").forEach(function (item) {
+        item.hidden = false;
+        item.style.display = "";
+      });
+      el.classList.add("dashboard-fallback", "dashboard-ready");
+      dashboard = fallbackDashboard();
+    }
+
+    try {
+      defaultState = JSON.parse(
+        document.getElementById("dashboard-default-state").textContent
+      );
+    } catch (error) {
+      defaultState = {cols: {}};
+      enableSsrFallback(error);
+    }
 
     // GridStack sólo incluye el CSS de columnas para 12; con muchas columnas el
     // ancho/posición de cada item no tendría regla. Generamos las COL reglas →
@@ -116,89 +165,30 @@
     st.textContent = css;
     document.head.appendChild(st);  // antes del init: la clase .gs-COL ya queda estilada
 
-    // Por DEFAULT el alto se ajusta al contenido (sin scrollbar); DESPUÉS el
-    // resize es libre. Handles SÓLO en el borde derecho (ancho) y la esquina se
-    // (ancho+alto): NO ponemos el handle del borde inferior ("s"/"sw") porque tapaba
-    // toda la barra de scroll horizontal del panel (era imposible agarrarla — la
-    // banda de resize del fondo se comía el puntero). Así el fondo queda libre salvo
-    // la esquina se, donde el grip de estirar vive naturalmente.
-    // Al redimensionar a mano, el panel queda "manual" y deja de auto-ajustarse
-    // (salvo que cambies de moneda, que fuerza el re-fit para mostrar todas).
-    var grid = GridStack.init({
-      column: COL, cellHeight: CELL, margin: MARGIN, float: false,
-      handle: ".panel-head", resizable: { handles: "e, se" },
-    });
-    // v3: el alto arranca en auto-fit. Prioridad: layout personal (localStorage) >
-    // layout default del server (DEFAULT_LAYOUT) > auto-layout de GridStack.
-    var KEY = "grid-layout-v3";
-    var DEFAULT_LAYOUT = {{ default_layout|safe }};
-    var DL = (DEFAULT_LAYOUT && typeof DEFAULT_LAYOUT === "object") ? DEFAULT_LAYOUT : null;
-    try {
-      var saved = JSON.parse(localStorage.getItem(KEY) || "null");
-      if ((!saved || !saved.length) && DL && DL.layout && DL.layout.length) saved = DL.layout;
-      if (saved && saved.length) grid.load(saved, false);  // restaura posición/ancho/alto
-    } catch (e) {}
-    grid.on("change", function () {
-      try { localStorage.setItem(KEY, JSON.stringify(grid.save(false))); } catch (e) {}
-    });
-    // Resize manual → el panel queda fijado por el usuario (no más auto-fit).
-    grid.on("resizestart", function (event, element) {
-      if (element) element.dataset.manual = "1";
-    });
-
-    // --- Auto-fit de altura al contenido ---------------------------------- //
-    // Mide el alto natural (head + tabla; las filas ocultas por el filtro de
-    // moneda no cuentan) y fija gs-h = ceil(px / cellHeight). table.offsetHeight
-    // da el alto natural tanto para crecer como para encoger (scrollHeight no:
-    // si el panel sobra, devuelve el alto actual, no el del contenido).
-    var MINROWS = 12;
-    var FIT_PAD = 4;    // colchón mínimo al fondo: pegado al último dato, sin scrollbar
-    function fitPanel(item, force) {
-      if (!item || !item.gridstackNode) return;
-      if (!force && item.dataset.manual === "1") return;  // respeta el resize manual
-      var body = item.querySelector(".panel-body");
-      var table = item.querySelector(".panel-body table");
-      if (!body || !table) return;
-      // Bail SOLO si el panel está realmente oculto (display:none → offsetParent
-      // null) o la tabla aún no mide. OJO: NO usar body.clientHeight===0 — un panel
-      // colapsado al mínimo (el head se come todo el alto) tiene body.clientHeight 0
-      // AUNQUE sea visible y tenga datos, y ese guard lo dejaba TRABADO chico para
-      // siempre (nunca volvía a crecer). Ese era el bug del "panel minimizado".
-      if (item.offsetParent === null) return;   // panel oculto / sin layout
-      if (table.offsetHeight === 0) return;     // tabla sin medir todavía
-      // Sin filas reales todavía (placeholder "Cargando…" en el arranque en frío, o
-      // todo oculto por el filtro): NO encoger el panel — lo dejamos en su alto actual
-      // hasta que el feed traiga los títulos. Si no, en los primeros segundos (antes
-      // de que el refresh loop pueble AppState) el fit mide el placeholder y deja el
-      // panel "minimizado". Cuando llegan las filas, htmx:afterSwap re-dispara el fit
-      // y lo ajusta al contenido.
-      var dataRows = table.querySelectorAll("tbody tr:not(.empty)");
-      var hasVisibleRow = false;
-      for (var i = 0; i < dataRows.length; i++) {
-        if (dataRows[i].offsetParent !== null) { hasVisibleRow = true; break; }
+    if (!dashboard) {
+      if (typeof GridStack === "undefined" || typeof BonosDashboardGrid === "undefined") {
+        enableSsrFallback();
+      } else {
+        try {
+          dashboard = BonosDashboardGrid.create({
+            element: el,
+            defaultState: defaultState,
+            columns: COL,
+            cellHeight: CELL,
+            margin: MARGIN,
+          });
+        } catch (error) {
+          enableSsrFallback(error);
+        }
       }
-      if (!hasVisibleRow) return;
-      // Ajuste relativo MEDIDO: queremos que el body sea apenas FIT_PAD más alto
-      // que la tabla (pegado al último dato, sin scrollbar). Cada fila ≈ CELL px de
-      // body, así que no hace falta modelar el margin interno de GridStack.
-      var deltaPx = (table.offsetHeight + FIT_PAD) - body.clientHeight;
-      var deltaRows = Math.ceil(deltaPx / CELL);
-      if (deltaRows === 0) return;
-      var rows = Math.max(MINROWS, item.gridstackNode.h + deltaRows);
-      if (rows !== item.gridstackNode.h) grid.update(item, { h: rows });
-    }
-    function fitAll() {
-      el.querySelectorAll(".grid-stack-item").forEach(function (it) { fitPanel(it); });
     }
 
     // --- Filtros de fila por panel (moneda y ley): wiring compartido ------- //
     // El estado vive en un atributo del .panel (sobrevive a los swaps de HTMX del
-    // tbody); el CSS oculta por data-*. La coreografía común (stopPropagation
-    // anti-drag del handle GridStack, borrar el flag manual, re-fit en rAF) vive
-    // UNA vez acá; cada filtro inyecta solo su semántica de clic.
+    // tbody); el CSS oculta por data-*. La coreografía común vive UNA vez acá;
+    // cada filtro inyecta solo su semántica de clic.
     function wireRowFilter(bar, btnSel, dataKey, attrName, onClick) {
       var panel = bar.closest(".panel");
-      var item = bar.closest(".grid-stack-item");
       function apply() {
         var on = Array.prototype.map.call(
           bar.querySelectorAll(btnSel + ".on"), function (b) { return b.dataset[dataKey]; });
@@ -214,9 +204,6 @@
         e.stopPropagation();
         onClick(bar, btn, e);
         apply();
-        // cambiar el filtro puede mostrar más filas → re-fit forzado (auto).
-        if (item) delete item.dataset.manual;
-        requestAnimationFrame(function () { fitPanel(item, true); });
       });
       apply();  // estado inicial desde los .on del markup
     }
@@ -270,17 +257,10 @@
     function lsGet(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
     function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
     function isObj(v) { return v != null && typeof v === "object" && !Array.isArray(v); }
-    // Personal (localStorage) > default del server (DL) > vacío. Validar la FORMA
-    // además del parseo: un valor guardado con tipo inesperado (versión vieja,
-    // edición a mano) tiraba TypeError acá y mataba todos los handlers de la
-    // toolbar que se registran después (botones muertos con datos refrescando).
-    var HIDDEN_PANELS = lsGet("panels-hidden-v1", null);   // [gs-id]
-    if (!Array.isArray(HIDDEN_PANELS)) HIDDEN_PANELS = (DL && Array.isArray(DL.hidden)) ? DL.hidden.slice() : [];
-    // v3 guarda claves estables. Las preferencias v2/default antiguas usan indices
-    // de base 1; conservamos el orden anterior de los paneles recortados.
+    // La geometría y la visibilidad pertenecen al controlador transaccional. Las
+    // columnas siguen siendo una preferencia separada, persistida por clave estable.
     var HIDDEN_COLS = lsGet("panel-cols-v3", null);        // {gs-id: [columnKey]}
-    if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = lsGet("panel-cols-v2", null);
-    if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = (DL && isObj(DL.cols)) ? JSON.parse(JSON.stringify(DL.cols)) : {};
+    if (!isObj(HIDDEN_COLS)) HIDDEN_COLS = isObj(defaultState.cols) ? JSON.parse(JSON.stringify(defaultState.cols)) : {};
     var LEGACY_PANEL_COLS = {
       bonares: ["ticker", "vto", "days_next_coupon", "price", "technical_value",
         "parity", "tir", "duration", "change_pct", "var_7d", "var_30d", "var_90d", "var_ytd", "var_1y", "volume"],
@@ -294,17 +274,8 @@
       var t = item.querySelector(".ph-title");
       return t ? t.textContent : item.getAttribute("gs-id");
     }
-    function showPanel(item) {
-      item.style.display = "";
-      grid.makeWidget(item);
-      requestAnimationFrame(function () { fitPanel(item, true); });
-    }
-    function hidePanel(item) {
-      grid.removeWidget(item, false);  // saca del grid pero conserva el DOM
-      item.style.display = "none";
-    }
 
-    // Estado persistido: columnas ocultas + paneles ocultos.
+    // Estado persistido de columnas ocultas.
     el.querySelectorAll(".grid-stack-item").forEach(function (item) {
       var id = item.getAttribute("gs-id");
       var buttons = Array.from(item.querySelectorAll(".col-menu .cfg-item"));
@@ -321,10 +292,6 @@
       });
     });
     lsSet("panel-cols-v3", HIDDEN_COLS);
-    HIDDEN_PANELS.forEach(function (id) {
-      var item = el.querySelector('.grid-stack-item[gs-id="' + id + '"]');
-      if (item) hidePanel(item);
-    });
 
     // Clicks de la toolbar (delegado en el contenedor del grid).
     el.addEventListener("click", function (e) {
@@ -336,8 +303,7 @@
       var id = item.getAttribute("gs-id");
       var act = btn.dataset.act;
       if (act === "close") {
-        hidePanel(item);
-        if (HIDDEN_PANELS.indexOf(id) < 0) { HIDDEN_PANELS.push(id); lsSet("panels-hidden-v1", HIDDEN_PANELS); }
+        if (dashboard.isEditing()) dashboard.setPanelVisible(id, false);
       } else if (act === "cfg") {
         var menu = item.querySelector(".col-menu");
         var willOpen = !menu.classList.contains("open");
@@ -369,7 +335,7 @@
       }
     });
 
-    // No arrastrar el panel al interactuar con la toolbar (el head es el handle).
+    // La toolbar nunca inicia gestos destinados al grip dedicado del layout.
     document.querySelectorAll(".ph-tools").forEach(function (t) {
       t.addEventListener("mousedown", function (e) { e.stopPropagation(); });
       t.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
@@ -392,23 +358,52 @@
       lsSet("panel-cols-v3", HIDDEN_COLS);
     });
 
-    // --- CONFIG global (nav): elegir qué paneles ver / restaurar cerrados -- //
+    // --- CONFIG global + edición transaccional del layout ------------------ //
     var cfgWrap = document.getElementById("panel-config-wrap");
     var cfgMenu = document.getElementById("panel-config-menu");
     var cfgBtn = document.getElementById("nav-config-btn");
+    var editBar = document.getElementById("layout-edit-bar");
+    var editStatus = document.getElementById("layout-edit-status");
+    var applyButton = document.getElementById("layout-apply");
+    var cancelButton = document.getElementById("layout-cancel");
+    var defaultButton = document.getElementById("layout-default");
+    var collisionTimer = null;
+    var defaultPreviewPending = false;
+
+    function setEditStatus(message, isError) {
+      if (!editStatus) return;
+      editStatus.textContent = message || "";
+      editStatus.classList.toggle("is-error", Boolean(isError));
+    }
+
+    function resetColumnPreferences() {
+      try { localStorage.removeItem("panel-cols-v3"); } catch (e) {}
+      HIDDEN_COLS = {};
+      el.querySelectorAll(".grid-stack-item").forEach(function (item) {
+        var panel = item.querySelector(".panel");
+        item.querySelectorAll(".col-menu .cfg-item").forEach(function (button) {
+          panel.classList.remove("hcol-" + button.dataset.col);
+          button.classList.add("on");
+        });
+      });
+    }
+
     function renderConfigMenu() {
       if (!cfgMenu) return;
+      var editing = dashboard.isEditing();
       var items = Array.prototype.slice.call(el.querySelectorAll(".grid-stack-item"));
       cfgMenu.innerHTML = items.map(function (item) {
         var id = item.getAttribute("gs-id");
-        var visible = item.style.display !== "none";
+        var visible = !dashboard.isPanelHidden(id);
         return '<button type="button" class="cfg-item' + (visible ? " on" : "") +
-               '" data-panel="' + id + '">' + panelTitle(item) + '</button>';
+               '" data-panel="' + id + '" aria-pressed="' + visible + '"' +
+               (editing ? "" : " disabled") + '>' + panelTitle(item) + '</button>';
       }).join("") +
         '<div class="cfg-sep"></div>' +
-        '<button type="button" class="cfg-action" onclick="toggleTheme()">◑ Alternar Tema Claro/Oscuro</button>' +
+        '<button type="button" class="cfg-action" data-action="theme">◑ Alternar Tema Claro/Oscuro</button>' +
         '<div class="cfg-sep"></div>' +
-        '<button type="button" class="cfg-action" data-action="save-default">★ Guardar layout como default</button>' +
+        '<button type="button" class="cfg-action" data-action="edit" aria-pressed="' +
+        editing + '">⠿ Editar layout</button>' +
         '<button type="button" class="cfg-action" data-action="reset-default">↺ Restaurar default</button>';
     }
     if (cfgBtn && cfgWrap) {
@@ -424,69 +419,97 @@
         var action = e.target.closest(".cfg-action");
         if (action) {
           e.stopPropagation();
-          if (action.dataset.action === "save-default") {
-            var payload = { layout: grid.save(false), hidden: HIDDEN_PANELS, cols: HIDDEN_COLS };
-            fetch("/panels/layout", { method: "POST", headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify(payload) })
-              .then(function (r) {
-                // Sin sesión el server redirige a /login (fetch lo sigue y devuelve HTML 200):
-                // sólo `redirected` identifica ese caso; un !ok con sesión es otro error
-                // (413 layout grande, 400 JSON, 500 disco) y no hay que mandar al login.
-                var t = action.textContent, msg;
-                if (r.redirected) msg = "⚠ Iniciá sesión";
-                else if (!r.ok) msg = "⚠ No se guardó (" + r.status + ")";
-                else msg = "✓ Guardado";
-                action.textContent = msg;
-                setTimeout(function () { action.textContent = t; }, 2000);
-              }).catch(function () {});
+          if (action.dataset.action === "theme") {
+            if (typeof window.toggleTheme === "function") window.toggleTheme();
+          } else if (action.dataset.action === "edit") {
+            if (!dashboard.isEditing()) defaultPreviewPending = false;
+            dashboard.beginEdit();
+            cfgWrap.classList.remove("open");
           } else if (action.dataset.action === "reset-default") {
-            localStorage.removeItem("grid-layout-v3");
-            localStorage.removeItem("panels-hidden-v1");
-            localStorage.removeItem("panel-cols-v3");
-            localStorage.removeItem("panel-cols-v2");
-            localStorage.removeItem("panel-cols-v1");   // resto de la versión anterior
-            location.reload();  // recarga → toma el layout default del server
+            dashboard.beginEdit();
+            defaultPreviewPending = dashboard.previewDefault();
+            setEditStatus("Default listo; aplicalo para guardar.");
+            cfgWrap.classList.remove("open");
           }
           return;
         }
         var btn = e.target.closest(".cfg-item");
         if (!btn) return;
-        e.stopPropagation();  // no cerrar el menú al elegir (solo ESC / click afuera)
+        e.stopPropagation();
+        if (!dashboard.isEditing()) return;
         var id = btn.dataset.panel;
-        // Toggle independiente: habilita/deshabilita SOLO este panel (no toca el resto),
-        // igual que el Config de columnas de cada panel.
-        var item = el.querySelector('.grid-stack-item[gs-id="' + id + '"]');
-        if (item.style.display === "none") {
-          showPanel(item);
-          HIDDEN_PANELS = HIDDEN_PANELS.filter(function (x) { return x !== id; });
-        } else {
-          hidePanel(item);
-          if (HIDDEN_PANELS.indexOf(id) < 0) HIDDEN_PANELS.push(id);
-        }
-        lsSet("panels-hidden-v1", HIDDEN_PANELS);
-        renderConfigMenu();  // refresca el resaltado (on/off) sin cerrar el menú
+        dashboard.setPanelVisible(id, dashboard.isPanelHidden(id));
+        cfgWrap.classList.remove("open");
       });
     }
+
+    applyButton.addEventListener("click", function () {
+      var resetColumnsAfterApply = defaultPreviewPending;
+      if (dashboard.applyEdit() && resetColumnsAfterApply) resetColumnPreferences();
+    });
+    cancelButton.addEventListener("click", function () { dashboard.cancelEdit(); });
+    defaultButton.addEventListener("click", function () {
+      defaultPreviewPending = dashboard.previewDefault();
+      setEditStatus("Default listo; aplicalo para guardar.");
+    });
+
+    el.addEventListener("dashboard:modechange", function (e) {
+      var editing = Boolean(e.detail && e.detail.editing);
+      if (!editing) defaultPreviewPending = false;
+      editBar.hidden = !editing;
+      setEditStatus(editing ? "Mové o redimensioná desde los controles azules." : "");
+      renderConfigMenu();
+    });
+    el.addEventListener("dashboard:statechange", function () {
+      if (defaultPreviewPending) defaultPreviewPending = false;
+      if (dashboard.isEditing()) setEditStatus("Cambios sin aplicar.");
+      renderConfigMenu();
+    });
+    el.addEventListener("dashboard:collision", function (e) {
+      var item = e.target.closest && e.target.closest(".grid-stack-item");
+      if (item) {
+        item.classList.add("layout-collision");
+        clearTimeout(collisionTimer);
+        collisionTimer = setTimeout(function () {
+          item.classList.remove("layout-collision");
+        }, 650);
+      }
+      setEditStatus("Ese espacio está ocupado; los otros paneles no se movieron.", true);
+    });
+    el.addEventListener("dashboard:applyerror", function () {
+      setEditStatus(dashboard.lastError || "No se pudo aplicar.", true);
+    });
+
+    var header = document.querySelector("body > header");
+    function syncHeaderHeight() {
+      document.documentElement.style.setProperty(
+        "--header-height", (header ? header.offsetHeight : 0) + "px"
+      );
+    }
+    syncHeaderHeight();
+    window.addEventListener("resize", syncHeaderHeight);
+    if (header && typeof ResizeObserver !== "undefined") {
+      new ResizeObserver(syncHeaderHeight).observe(header);
+    }
+    renderConfigMenu();
+
     // Cerrar desplegables al clickear afuera.
     document.addEventListener("click", function (e) {
       if (!e.target.closest(".ph-cfg"))
         document.querySelectorAll(".col-menu.open").forEach(function (m) { m.classList.remove("open"); });
       if (cfgWrap && !e.target.closest("#panel-config-wrap")) cfgWrap.classList.remove("open");
     });
-    // ESC cierra los desplegables abiertos (y el gráfico si está abierto).
+    // ESC cierra primero el modal; sin modal, cancela el borrador del layout.
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
+      var modal = document.getElementById("modal");
+      if (modal && modal.innerHTML) {
+        modal.innerHTML = "";
+        return;
+      }
+      if (dashboard.isEditing()) dashboard.cancelEdit();
       if (cfgWrap) cfgWrap.classList.remove("open");
       document.querySelectorAll(".col-menu.open").forEach(function (m) { m.classList.remove("open"); });
-      var modal = document.getElementById("modal");
-      if (modal && modal.innerHTML) modal.innerHTML = "";
-    });
-
-    // Re-fit cuando HTMX reemplaza un tbody (carga inicial, SSE, polling 15s) y
-    // un fit global tras aplicar los filtros por defecto.
-    document.body.addEventListener("htmx:afterSwap", function (e) {
-      var item = e.target.closest && e.target.closest(".grid-stack-item");
-      if (item) requestAnimationFrame(function () { fitPanel(item); });
     });
 
     // a11y del #modal (detalle/chart/share): focus-trap + restaurar foco en CUALQUIER
@@ -525,7 +548,6 @@
     document.body.addEventListener("htmx:responseError", onModalError);
     document.body.addEventListener("htmx:sendError", onModalError);
 
-    requestAnimationFrame(fitAll);
   })();
 </script>
 <script>

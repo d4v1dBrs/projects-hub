@@ -1,10 +1,135 @@
-# CLAUDE.md — Guía del codebase (web personal + terminal de bonos)
+# AGENTS.md — Guía del codebase (web personal + terminal de bonos)
+
+## MANDATO PRIORITARIO PARA TODA IA — LEER COMPLETO ANTES DE ACTUAR
+
+Este archivo es la guía operativa canónica del repositorio. Toda IA debe leerlo completo —y
+cualquier `AGENTS.md` más profundo que aplique— antes de analizar, proponer, editar, ejecutar o
+validar trabajo del proyecto. Estas reglas tienen prioridad sobre skills, prompts auxiliares y
+convenciones genéricas, pero **nunca** pueden desplazar instrucciones de sistema, desarrollador o
+usuario de mayor jerarquía. Si existe un conflicto, declararlo y seguir la instrucción superior.
+
+### Estándar de ingeniería
+
+- Prioridad: **correctitud financiera/funcional → seguridad → integridad de datos → mantenibilidad
+  → rendimiento medido → velocidad**. Nunca invertir ese orden por conveniencia.
+- Resolver la causa raíz con el menor cambio coherente; preservar contratos/firmas y evitar
+  refactors, renombres, dependencias o abstracciones ajenos a la tarea.
+- No inventar comportamiento, datos ni convenciones: verificar código, configuración, fuente
+  primaria, historial o runtime según corresponda.
+- Mantener código simple y explícito. Optimizar sólo cuellos identificados; evitar N+1, I/O repetido,
+  caches sin cota, bloqueo del event loop y concurrencia que altere el pricing determinista.
+- Validar bordes y usar errores/observabilidad específicos; no ocultar fallas con `except Exception`,
+  defaults silenciosos, datos sintéticos o degradaciones no reportadas.
+
+### Flujo obligatorio por tarea
+
+1. **Estado**: `git status --short --branch`; detectar alcance y cambios ajenos. Nunca sobrescribir,
+   revertir ni limpiar trabajo del usuario.
+2. **Contexto**: localizar con `rg --files`/`rg -n`; leer sólo archivos, callers, contratos, config y
+   docs relevantes. Usar `git log`/`git blame` sólo ante ambigüedad real.
+3. **Riesgo**: clasificar documentación, UI, comportamiento, transversal, finanzas, auth/seguridad,
+   esquema/DB, proveedor u operaciones.
+4. **Resultado**: antes de editar, fijar aceptación, invariantes y checks. Diseño breve si es acotado;
+   plan por fases sólo con dependencias, ambigüedad o riesgo.
+5. **Cambio**: una tarea coherente, diff mínimo y estilo existente; registrar problemas laterales sin
+   ampliar alcance.
+6. **Evidencia**: check específico primero, luego amplio; revisar diff/estado. No afirmar éxito sin
+   salida fresca verificable.
+7. **Entrega**: informar archivos, comandos/resultados, riesgos y partes no validadas; ausencia de
+   errores no prueba exactitud.
+
+### Uso eficiente de contexto y herramientas
+
+- Mapear primero; usar búsquedas y rangos pequeños. No volcar repo, archivos completos, dependencias,
+  generados ni logs extensos.
+- Reutilizar contexto confirmado, agrupar comandos y no releer tras `apply_patch` salvo check puntual.
+- Paralelizar sólo 2+ investigaciones independientes y read-heavy: máximo dos agentes por defecto,
+  sin estado/archivos compartidos y con integración única. Nunca editar el mismo archivo en paralelo.
+- Superpowers completo sólo para cambios complejos, creativos, transversales o riesgosos; en cambios
+  acotados, diseño breve + validación dirigida + revisión del diff.
+- Preferir Codex, Superpowers, GitHub y browser/automatización existentes. **No sumar orquestador,
+  memoria/context manager, navegador, MCP, plugin o dependencia** que duplique capacidad.
+- Evitar investigación especulativa, documentación duplicada, ceremonia y optimización sin métrica.
+
+### Definición de terminado
+
+- **Python**: check dirigido + `py -3.12 -m ruff check .`; nunca `python`/`pip`/`pytest` pelados.
+- **Arranque/rutas/templates**: smoke con `MONITOR_DISABLE_LOOPS=1` y `MONITOR_DB_DIR` temporal si
+  puede tocar estado; probar import, rutas relevantes y templates.
+- **UI**: servidor local + vista afectada; revisar consola, red, interacción, responsive y temas.
+- **Sólo docs**: validar estructura, referencias, obsolescencia, whitespace y tamaño; sin servidor si
+  no cambió vista/runtime.
+- **Finanzas**: contrastar caso determinista con fuente/cálculo independiente; reportar inputs,
+  valuación, settlement y tolerancia.
+- **Fallas ajenas**: no corregirlas; separar checks aprobados, fallas preexistentes y no ejecutados.
+
+### Protocolo obligatorio para cambios financieros
+
+- Leer `docs/convenciones-financieras.md` y docstrings/estrategias involucrados.
+- Confirmar valuación, settlement CI/24h/T+N, calendario, day-count, unidades/escala, moneda/sufijo,
+  tasa nominal/efectiva, capitalización, flujos, lag índice/FX, redondeo y calidad/fuente activa+floor.
+- Mantener dominio puro/determinista; cubrir nominal y bordes de fechas, flujos, tasas y faltantes.
+  Nunca ajustar “hasta que dé” ni inventar velas, índices o cobros.
+- Para `DUAL_CER_TAMAR`, preservar estrictamente: **settlement T+N → lag CER de 10 hábiles → spread
+  → máximo de rieles**, en ese orden. Cotejar TTJ26 con IAMC (V.Téc 146.39) si se toca ese camino.
+- Preservar las firmas de `FinancialEngine` y sus consumidores. Un cambio de contrato requiere mapa
+  completo de callers y migración explícita, no compatibilidad accidental.
+
+### Seguridad, datos y permisos
+
+- Mínimo privilegio. Sin autorización explícita: no instalar dependencias/skills/plugins/MCP; tocar
+  secretos, `.env`, DB persistente, servicios/host; crear branch/worktree; ni commit/push/pull/merge/deploy.
+- Nunca push a `monitor-upstream`; sólo `origin`. No destruir/descartar cambios ni exponer secretos,
+  payloads sensibles o excepciones internas en endpoints públicos, logs o respuestas.
+- No debilitar TLS, timeouts, autenticación, rate-limit, validaciones, checks o supervisión para
+  “hacer pasar” una tarea. En httpx, `None` significa sin timeout y está prohibido como sustituto de
+  `httpx.USE_CLIENT_DEFAULT`; las excepciones TLS sólo pasan por la allowlist configurada.
+- SQLite es verdad; Excel/CSV, semillas. Sin reseed destructivo: esquema forward-only, stores fuera
+  del árbol, smoke aislado y migración explícita, compatible e idempotente cuando aplique.
+
+### Fuentes de verdad y disciplina documental
+
+- Fuentes: runtime verificado = comportamiento; `AGENTS.md` = operación;
+  `docs/convenciones-financieras.md` = pricing; SQLite = catálogo. Ante divergencia, verificar intención
+  y actualizar código+docs en el mismo cambio autorizado.
+- `CLAUDE.md` duplicaba 187/219 líneas no vacías de esta guía: consolidar en tarea separada; mientras,
+  no editar ambas copias por reflejo ni dejar que diverjan silenciosamente.
+- Decisiones duraderas junto a su fuente; eliminar obsolescencia y fechar/evidenciar hallazgos temporales.
+
+### Alertas verificadas del estado actual (auditoría 2026-09-06)
+
+- **Sin red crítica**: no hay `tests/` ni `.github/workflows`; Ruff solo no prueba finanzas, auth,
+  rutas, persistencia ni loops.
+- **Divergencia de montaje**: el worktree actual de `apps/web/app.py` importa/monta sólo `personal`,
+  `panels`, `bonds`, `header` y `stream`; los módulos `auth`, `users_abm` y `abm` siguen presentes
+  pero no están montados. `HEAD` sí los montaba y definía `html_deps`/`api_deps`. A la vez,
+  `/api/metrics` y `/api/riesgo-pais` aún dependen de `get_current_user` y el handler HTML fue
+  reemplazado por un 401 JSON. **Antes de tocar rutas o auth, confirmar si esta divergencia es una
+  decisión activa del usuario; nunca restaurarla ni eliminarla automáticamente.**
+- El árbol puede estar sucio y este archivo sin trackear: `git status` es obligatorio; ninguna
+  diferencia preexistente autoriza a tocarla.
+
+### Mejoras priorizadas pendientes — no implementarlas incidentalmente
+
+- **P0 — red mínima de regresión**: restaurar selectivamente desde la historia común `95380b` y
+  adaptar al diseño actual `test_json_script.py`, `test_loop_supervisor.py`,
+  `test_settlement_consonance.py`, `test_fin_Z1_financiero_vtec_settlement.py` y
+  `test_rem_R1_financiero_cer_lag.py`. No revivir toda la suite legacy ni su arquitectura obsoleta.
+- **P1 — invariantes**: tras la red determinista, Hypothesis para settlement/calendario, day-count,
+  paridad/V.Téc y orden de rieles, con oráculos claros y ejemplos independientes.
+- **P1 — CI**: GitHub Actions con Python 3.12, instalación de `requirements.lock` más
+  `requirements-dev.txt`, Ruff y pytest; DB temporal, loops off y sin secretos/prod/proveedores externos.
+- **Automatización futura útil**: considerar dos skills locales pequeñas, sólo en tarea explícita:
+  `verify-financial-change` (convenciones → tests dirigidos → benchmark → Ruff) y
+  `verify-web-change` (smoke aislado → servidor → browser → consola/red → Ruff). No crear un sistema
+  de agentes adicional ni duplicar lo que ya cubren Codex/Superpowers.
 
 **Web personal de David Berisso** (`/` dashboard-resume con radar/grafo de skills en ECharts,
 `/projects`) **+ terminal de renta fija argentina** en `/bonos` (10 paneles SSR: bonares, cer,
 tasa_fija, tamar, dolar_linked, bopreales, panel_lider, futuros, bei_tenor, bei_sendero; modal
-por bono con tabs Trading / Gráfico (Lightweight Charts) / Quant (horizon matrix)) + ABM de
-instrumentos en `/abm` + manager de usuarios en `/users`.
+por bono con tabs Trading / Grafico / Quant / WM / Docencia). El código también contiene ABM de
+instrumentos en `/abm` y manager de usuarios en `/users`; su montaje actual está bajo la alerta de
+auditoría anterior y no debe asumirse sólo por la presencia de los módulos.
 
 **Origen**: FORK RECORTADO de `MonitorMercadoArgy` (base común `95380b2`; `497feb7` sacó
 ON/provinciales/valor relativo/bei_pares, `730861b` borró tests y legacy). El remote
@@ -46,7 +171,7 @@ $env:MONITOR_DISABLE_LOOPS='1'; py -3.12 run.py   # smoke sin loops (import + ru
 
 ```text
 apps/web/
-  app.py               FastAPI + lifespan: 2 loops supervisados (`refresh` 5s, `bei` 300s) + `_startup_reconcile` (1×). `_ALL_TYPES` = qué precia el motor. OpenAPI apagada (MONITOR_ENABLE_DOCS=1 sólo dev).
+  app.py               FastAPI + lifespan: loops supervisados (`refresh` 5s, `bei` 300s; `history` 300s solo si hay columnas historicas) + `_startup_reconcile` (1×). `_ALL_TYPES` = qué precia el motor. OpenAPI apagada (MONITOR_ENABLE_DOCS=1 sólo dev).
   state.py             AppState: snapshot vivo + revision/wait_for_change (SSE) + errores/loop_crashes/degraded_loops + salud del catálogo + tablas BEI.
   supervisor.py        `supervise()`: reinicia con backoff 1s→60s el loop que termine por lo que sea (ver Robustez).
   deps.py deps_auth.py get_repo (singleton CatalogRepository) + get_state/hub/provider/indices/fx/rofex/bondterminal · get_current_user (401) / _html (302) / admin / RequireTabPermission (403).
@@ -87,6 +212,13 @@ arranque: se publica en `/api/health` y el badge) → providers del modal → ta
   `GenerateMonitorReport.execute(_ALL_TYPES)` en `to_thread` (pricing SERIAL a propósito, GIL)
   → `AppState.update` → push SSE. Ciclo > `refresh_sec` se grita a WARNING.
 - `bei` (1× al arranque + 300s): `compute_bei_tables` → `AppState.set_bei`.
+- `history` (tras el primer snapshot + 300s): precarga bases Sem/1M/3M/YTD/1A
+  solo para `HISTORY_TYPES`, derivado de las columnas de paneles activos. Si el set
+  esta vacio, no se inicia esta tarea ni se descargan historicos automaticamente.
+  El refresh arranca sin espera inicial, y tanto refresh como CI leen estas bases
+  solo de cache: nunca descargan historicos. BEI no calcula variaciones historicas.
+  Solo `refresh` ingiere precios/indices/FX: BEI y reconcile esperan el primer
+  snapshot y reutilizan los proveedores. Una base historica vacia se reintenta.
 
 `_ALL_TYPES` = SOBERANOS + BOPREALES + TASA_FIJA + CER + DOLAR_LINKED + TAMAR + DUAL_TAMAR +
 PROVINCIALES — **sin `OBLIGACIONES_NEGOCIABLES`** (ver Pendientes).
@@ -100,10 +232,19 @@ por `(revision, panel)`). Los swaps HTMX reemplazan sólo filas y nunca cambian 
 El layout de GridStack parte del default versionado de `apps/web/dashboard_layout.py`; una
 preferencia personal se guarda en `localStorage` (`bonos-dashboard-state-v1`) únicamente al
 pulsar Aplicar. Cancelar no escribe y Default + Aplicar elimina la preferencia local. Modal:
-`GET /bond/{t}/detail` (Tailwind play-CDN + Alpine) + `/horizon-matrix` + `/price-history`
-(JSON para Lightweight Charts: Data912 → `chart_history` BYMA → CSV piso; red caída = 503 `[]`).
+`GET /bond/{t}/detail` usa `bond_workbench.py` y un snapshot del Hub en el mismo plazo
+CI/24hs. `POST /bond/{t}/workbench` recalcula escenarios, posiciones y comisiones;
+`bond-workbench.js/css` reemplazan Tailwind/Alpine y liberan charts/requests al cerrar.
+`/history-analysis` y `/api-fields` son lazy, con cache acotado y limite de cuatro
+consultas externas simultaneas por proceso. `bond_history.py` combina cierres CSV,
+Data912 y OHLCV BYMA sin inventar velas; solicita tres anos e informa cobertura real.
+Lightweight Charts 5.2.1 local se carga al abrir Grafico. Quant usa retornos de precio
+entre ruedas BYMA consecutivas, no retorno total. WM separa cupon/amortizacion/venta
+y comisiones; Docencia muestra corte teorico a TIR constante, glosario y ejercicios.
+Los flujos indexados/FX son escenarios explicitos, no cobros garantizados. Se conservan
+las rutas legacy `/horizon-matrix` y `/price-history`.
 **Capa personal**: `routers/personal.py` sirve `personal/*.html` standalone (Inter + Font
-Awesome + ECharts 5.5.0 por CDN, `style.css`, `main.js`); no pasan por `base.html` ni por auth.
+Awesome + ECharts 6.1.0 por CDN, `style.css`, `main.js`); no pasan por `base.html` ni por auth.
 
 ## Autenticación y permisos
 
@@ -115,12 +256,16 @@ Secreto: env `MONITOR_JWT_SECRET_KEY` > `db_dir/jwt_secret` (0600) > generado y 
 falta de **login**: `TabForbiddenException` → **403** con links a lo que sí puede ver; sólo
 `RequiresLoginException` → 302 `/login` (`HX-Redirect` si es HTMX).
 
-**Exige sesión HOY**: `/abm/*` (tab), `/users/*` (admin), `/api/metrics`,
-`/api/riesgo-pais` (401). **Público HOY**: `/`, `/projects`, `/bonos`,
+> **Alerta de montaje actual**: las reglas siguientes describen el contrato de acceso diseñado,
+> pero `auth`, `users_abm` y `abm` no están incluidos hoy en `app.py`; por eso `/login`, `/abm/*`
+> y `/users/*` no están disponibles en el worktree auditado. Verificar intención antes de cambiarlo.
+
+**Exige sesión según el contrato diseñado**: `/abm/*` (tab), `/users/*` (admin), `/api/metrics`,
+`/api/riesgo-pais` (401). **Permanece público en el montaje actual**: `/`, `/projects`, `/bonos`,
 `/panels/*`, `/bond/*`, `/header/cards`, `/stream`, `/api/health` (recortado, sin `last_error`)
 y `/health/badge` — `app.py` asume que el badge está detrás de login y **no lo está**; su tooltip
-lleva `last_error` crudo. `html_deps`/`api_deps` existen en `app.py` sin aplicar: gatear el
-terminal es decisión pendiente del usuario.
+lleva `last_error` crudo. Gatear el terminal es decisión pendiente: `html_deps`/`api_deps` estaban
+en `HEAD`, pero ya no existen en el worktree auditado; no confundir intención con montaje actual.
 
 **Rate-limit del login**: 5 intentos / 5 min por (IP, usuario), bcrypt dummy contra timing. La IP
 es el peer TCP; `X-Forwarded-For` sólo se cree si el peer está en `settings.trusted_proxy_ips`
@@ -189,7 +334,7 @@ arriba) e instala `requirements.txt`, NO el `.lock`. El unit **no tiene `Environ
 
 ## Robustez / Operaciones
 
-- **Supervisión**: los 2 loops van en `supervise()` (backoff 1s→60s, reset tras 60s sanos, tope
+- **Supervisión**: todos los loops activos van en `supervise()` (backoff 1s→60s, reset tras 60s sanos, tope
   de 5 cancelaciones espurias); `stopping` se setea ANTES de cancelar (shutdown ≠ caída).
   `refresh` caído = crítico (badge rojo "sin datos", `status: degraded`, retención 300s); `bei`
   caído = parcial (ámbar "loop caído", `degraded_loops`). El 2026-09-01 el refresh murió mudo 22hs.
@@ -203,26 +348,37 @@ arriba) e instala `requirements.txt`, NO el `.lock`. El unit **no tiene `Environ
 
 ## Pendientes / decisiones abiertas
 
-- **Gatear `/bonos` y sus fragmentos detrás de login** (`html_deps`/`api_deps` listos, sin
-  aplicar); mientras tanto el badge y `/stream` también son públicos.
-- **Vendorear lo que sigue en CDN sin pin**: `lightweight-charts` (unpkg, en `base.html` → TODAS
-  las páginas del terminal), Tailwind play-CDN + `alpinejs@3.x.x` (`fragments/bond_detail.html`),
-  ECharts 5.5.0 + Font Awesome + Google Fonts (`personal/*`). El resto ya es `static/vendor/`.
+- **Gatear `/bonos` y sus fragmentos detrás de login**: `html_deps`/`api_deps` estaban listos en
+  `HEAD`, pero faltan en el worktree auditado; mientras tanto badge y `/stream` son públicos.
+- **CDNs pendientes en la web personal**: ECharts 6.1.0 + Font Awesome + Google Fonts
+  (`personal/*`). El modal ya usa Lightweight Charts y Lucide locales con version fija;
+  no carga Tailwind ni Alpine.
 - **ONs**: `data/obligaciones_negociables.csv` es semilla sin ingesta (se conserva a propósito);
-  `_ALL_TYPES` no las precia; `PANELS` aún define `obligaciones_negociables`/`provinciales`/
-  `valor_relativo`/`bei_pares` fuera de `PANEL_ORDER`; el ABM abre en esa hoja. ¿Vuelven o se limpian?
+  `_ALL_TYPES` no las precia. Los paneles `obligaciones_negociables`, `provinciales`,
+  `valor_relativo` y `bei_pares` fueron retirados de `PANELS` y `PANEL_ORDER`; quedan semillas y
+  plomería parcial. Su restauración o limpieza sigue siendo una decisión explícita pendiente.
 - **Sin UI**: `fragments/cer_drawer_body.html` + `GET/POST /bond/{t}/cer`, `POST
   /bond/{t}/metrics` (`calc_result.html` sí lo usa `/abm/calc`) y `static/js/quant_engine.js`.
-- **`Profile.pdf`** en la raíz: trackeado, nadie lo sirve ni lo linkea (el mount estático es
-  `apps/web/static`). O va a `static/` con un link "CV" en `personal/index.html`, o sale del repo.
 
 ## Flujo Superpowers (método de trabajo)
 
-Plugin **Superpowers**: `brainstorming → spec → writing-plans → plan → subagent-driven →
-code-review → finishing-branch`; artefactos en `docs/superpowers/` (on-demand). Las skills se
-auto-disparan al arrancar Claude Code. **Este CLAUDE.md gana sobre cualquier skill** (financieras
-de `docs/convenciones-financieras.md`, SQLite = verdad, Excel = semilla). **TDD no aplica mientras no haya suite**: la
-verificación es `py -3.12 -m ruff check .` + smoke con `MONITOR_DISABLE_LOOPS=1` (import limpio,
-rutas responden, templates compilan) + comparar números a mano en el modal. Worktrees **nunca**
-dentro del proyecto (OneDrive; `.worktrees/` gitignored): `EnterWorktree` del harness o
-`~/.config/superpowers/worktrees/`. Comandos en planes: `py -3.12`, no `python`/`pytest`.
+### Revision local solicitada por el usuario
+
+- Despues de cada cambio, iniciar o actualizar el servidor local y abrir el navegador
+  en la vista modificada para que el usuario pueda revisarla. Dejar el servidor activo
+  y compartir la URL local. Reutilizar la pestana de revision cuando ya este abierta.
+- Acumular cambios en local. No hacer commit, push, pull ni despliegue hasta que el
+  usuario lo pida explicitamente.
+
+Plugin **Superpowers**: para trabajo complejo, `brainstorming → spec → writing-plans → plan →
+subagent-driven → code-review → finishing-branch`; artefactos en `docs/superpowers/` (on-demand).
+Para cambios acotados aplicar el flujo liviano definido al inicio. Las skills se auto-disparan al
+arrancar Codex. **Este AGENTS.md gana sobre cualquier skill dentro de las instrucciones del repo,
+siempre debajo de sistema/desarrollador/usuario** (financieras de
+`docs/convenciones-financieras.md`, SQLite = verdad, Excel = semilla). Mientras no haya suite, TDD
+integral no aplica y debe declararse esa limitación: el gate actual es `py -3.12 -m ruff check .` +
+smoke aislado con `MONITOR_DISABLE_LOOPS=1` (import limpio, rutas relevantes, templates) + contraste
+manual financiero cuando corresponda. La restauración de tests se rige por la prioridad P0 anterior.
+Worktrees **nunca** dentro del proyecto (OneDrive; `.worktrees/` gitignored): `EnterWorktree` del
+harness o `~/.config/superpowers/worktrees/`, sólo con autorización. Comandos en planes:
+`py -3.12`, no `python`/`pytest` pelados.

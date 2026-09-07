@@ -145,7 +145,6 @@
   <nav class="top-nav">
     <div class="nav-links">
         <a href="/" class="nav-link">DASHBOARD (RESUMEN)</a>
-        <a href="/projects" class="nav-link">PROYECTOS: CODING</a>
         <a href="/bonos" class="nav-link active">BONOS ARGY</a>
     </div>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 15px; padding-right: 20px;">
@@ -178,20 +177,11 @@
 
     <nav style="display: flex; align-items: center; gap: 8px; padding-right: 18px; padding-left: 10px; background: var(--head-bg); flex-shrink: 0; border-left: 1px solid var(--panel-border);">
       {% if has_tab("bonos") %}<a href="{{ url_for('index') }}">Bonos</a>{% endif %}
-      {% if has_tab("abm") %}<a href="/abm">ABM Bonos</a>{% endif %}
-      {% if current_user and current_user.is_admin %}<a href="/users" style="color: #60a5fa; font-weight: bold;">Manager</a>{% endif %}
-      
+
       <span class="nav-cfg-wrap" id="panel-config-wrap">
         <a href="{{ url_for('index') }}" id="nav-config-btn">CONFIG</a>
         <div class="panel-config-menu" id="panel-config-menu"></div>
       </span>
-
-      {# Logout por POST #}
-      {% if current_user %}
-      <form method="post" action="/logout" style="display:inline; margin-left: 6px;">
-        <button type="submit" class="theme-btn" title="Cerrar sesión ({{ current_user.username }})">⎋</button>
-      </form>
-      {% endif %}
     </nav>
   </header>
   {% block content %}{% endblock %}

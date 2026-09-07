@@ -1,4 +1,4 @@
-"""App FastAPI: web personal (`/`, `/projects`) + terminal de bonos (`/bonos`, HTMX SSR).
+"""App FastAPI: web personal (`/`) + terminal de bonos (`/bonos`, HTMX SSR).
 
 `run.py` la levanta vía uvicorn. Integra:
   - CatalogRepository (SQLite) vía Depends(get_repo).
@@ -20,23 +20,17 @@ import asyncio
 import logging
 import os
 import time
-from html import escape
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from apps.web.deps_auth import (
-    RequireTabPermission, RequiresLoginException, TabForbiddenException,
-    get_current_user, get_current_user_html,
-)
+from apps.web.deps_auth import RequiresLoginException, get_current_user
 from apps.web.deps import get_bondterminal, get_repo, get_state
-from apps.web.routers import (
-    abm, auth as auth_router, bonds, header, panels, personal, stream, users_abm,
-)
+from apps.web.routers import bonds, header, panels, personal, stream
 from apps.web.routers.panels_schema import HISTORY_TYPES
 from apps.web.state import AppState
 from apps.web.supervisor import supervise
@@ -350,7 +344,7 @@ async def lifespan(app: FastAPI):
     repo = get_repo()  # warm: carga SQLite / siembra desde Excel
     # Salud del catálogo → AppState (badge + /api/health). Incluye el fallo de la
     # SIEMBRA: `CatalogRepository` ya no lo deja explotar el arranque (mataba también
-    # /login y /api/health, o sea la superficie donde se lee el motivo), lo publica.
+    # /api/health, o sea la superficie donde se lee el motivo), lo publica.
     await _publish_catalog_health(app, repo)
     # Providers para el popup de detalle (comparten caches class-level con el refresh).
     app.state.provider = Data912MarketDataProvider()
@@ -394,12 +388,9 @@ async def lifespan(app: FastAPI):
         await app.state.client.aclose()
 
 
-# Docs de OpenAPI APAGADAS por default: FastAPI las monta sobre el router raíz, fuera
-# de los `include_router(..., dependencies=[...])` donde vive TODA la auth, y el único
-# middleware global es GZip → /openapi.json publicaba el inventario completo de rutas
-# (incluida la ABM de usuarios y los nombres de campo de /source/credentials) sin
-# cookie. Para levantarlas en desarrollo: MONITOR_ENABLE_DOCS=1 (NUNCA en el droplet:
-# las re-expone públicamente, no las pone detrás del login).
+# Docs de OpenAPI APAGADAS por default: FastAPI las monta sobre el router raíz y
+# /openapi.json publicaría el inventario completo de endpoints. Para levantarlas en
+# desarrollo: MONITOR_ENABLE_DOCS=1 (NUNCA en el droplet).
 _DOCS = bool(os.environ.get("MONITOR_ENABLE_DOCS"))
 app = FastAPI(
     title="Monitor Renta Fija AR",
@@ -442,48 +433,12 @@ app.mount("/static", CachedStaticFiles(directory=str(Path(__file__).resolve().pa
 
 @app.exception_handler(RequiresLoginException)
 async def requires_login_exception_handler(request: Request, exc: RequiresLoginException):
-    if request.headers.get("HX-Request"):
-        # `content` es POSICIONAL y obligatorio en JSONResponse: sin él esto tiraba
-        # TypeError y el fragmento HTMX de un usuario deslogueado terminaba en un 500
-        # (sin `HX-Redirect`, o sea sin volver al login) en vez de redirigir.
-        return JSONResponse({"detail": "login required"}, status_code=200,
-                            headers={"HX-Redirect": "/login"})
-    return RedirectResponse(url="/login", status_code=302)
-
-
-@app.exception_handler(TabForbiddenException)
-async def tab_forbidden_exception_handler(request: Request, exc: TabForbiddenException):
-    """403 'sin permiso' — NUNCA un redirect a /login.
-
-    Falta de PERMISO ≠ falta de LOGIN: el usuario ya se autenticó, mandarlo al
-    formulario le dice 'sesión vencida' y lo deja reintentando la clave para siempre.
-    Se le muestra qué pestañas SÍ tiene (con link) para que salga de ahí."""
-    tabs = {tab: url for tab, url in auth_router._TAB_LANDING}
-    links = " · ".join(f'<a href="{escape(url)}">{escape(tab)}</a>'
-                       for tab, url in tabs.items() if tab in exc.allowed)
-    return HTMLResponse(
-        '<!doctype html><meta charset="utf-8"><title>Sin permiso</title>'
-        '<div style="font:14px system-ui;max-width:38rem;margin:12vh auto;padding:0 1rem">'
-        f'<h1 style="font-size:1.1rem">Sin permiso para «{escape(str(exc.tab))}»</h1>'
-        '<p>Tu usuario no tiene habilitada esta pestaña. No es un problema de sesión: '
-        'seguís logueado.</p>'
-        + (f'<p>Podés ir a: {links}</p>' if links
-           else '<p>No tenés ningún módulo habilitado — pedile acceso al administrador.</p>')
-        + '<form method="post" action="/logout"><button type="submit">Cerrar sesión</button></form></div>',
-        status_code=403)
-
-
-app.include_router(auth_router.router)
-app.include_router(users_abm.router)
-
-html_deps = [Depends(get_current_user_html)]
-api_deps = [Depends(get_current_user)]
+    return JSONResponse({"detail": "authentication unavailable"}, status_code=401)
 
 app.include_router(personal.router)
 
 app.include_router(panels.router)
 app.include_router(bonds.router)
-app.include_router(abm.router, dependencies=[Depends(RequireTabPermission("abm"))])
 
 # Parciales globales de HTMX
 app.include_router(header.router)

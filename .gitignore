@@ -31,6 +31,9 @@ BYMADATA_EXCEL/
 # Artefactos de Playwright MCP (snapshots/console de pruebas de UI)
 .playwright-mcp/
 
+# Sesiones locales de brainstorming visual
+.superpowers/
+
 # Scratch local (mockups, dumps, pruebas a mano): nunca se versiona
 scratch/
 
